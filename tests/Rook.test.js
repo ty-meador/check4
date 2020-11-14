@@ -2,7 +2,7 @@
 import {
 	Rook,
 	Piece
-} from "./Pieces.js";
+} from "../src/Pieces.js";
 
 test( "rook is subclass of Piece", () => {
 	const R = new Rook();
@@ -26,8 +26,8 @@ test( "Rook can move up any number of spaces", () => {
 	};
 	const R = new Rook( from );
 
-	expect( R.canMove( to.near.x, to.near.y )).toBe( true );
-	expect( R.canMove( to.far.x, to.near.y )).toBe( true );
+	expect( R.canMove( to.near.x, to.near.y ) ).toBe( true );
+	expect( R.canMove( to.far.x, to.near.y ) ).toBe( true );
 });
 
 test( "Rook can move left any number of spaces", () => {
@@ -47,8 +47,8 @@ test( "Rook can move left any number of spaces", () => {
 	};
 	const R = new Rook( from );
 
-	expect( R.canMove( to.near.x, to.near.y )).toBe( true );
-	expect( R.canMove( to.far.x, to.near.y )).toBe( true );
+	expect( R.canMove( to.near.x, to.near.y ) ).toBe( true );
+	expect( R.canMove( to.far.x, to.near.y ) ).toBe( true );
 });
 
 test( "Rook can move down any number of spaces", () => {
@@ -68,8 +68,8 @@ test( "Rook can move down any number of spaces", () => {
 	};
 	const R = new Rook( from );
 
-	expect( R.canMove( to.near.x, to.near.y )).toBe( true );
-	expect( R.canMove( to.far.x, to.far.y )).toBe( true );
+	expect( R.canMove( to.near.x, to.near.y ) ).toBe( true );
+	expect( R.canMove( to.far.x, to.far.y ) ).toBe( true );
 });
 
 test( "Rook can move right any number of spaces", () => {
@@ -89,8 +89,8 @@ test( "Rook can move right any number of spaces", () => {
 	};
 	const R = new Rook( from );
 
-	expect( R.canMove( to.near.x, to.near.y )).toBe( true );
-	expect( R.canMove( to.far.x, to.far.y )).toBe( true );
+	expect( R.canMove( to.near.x, to.near.y ) ).toBe( true );
+	expect( R.canMove( to.far.x, to.far.y ) ).toBe( true );
 });
 
 test( "Rook cannot move diagnoally", () => {
@@ -118,10 +118,10 @@ test( "Rook cannot move diagnoally", () => {
 	};
 	const R = new Rook( from );
 
-	expect( R.canMove( to.ne.x, to.ne.y )).toBe( false );
-	expect( R.canMove( to.nw.x, to.nw.y )).toBe( false );
-	expect( R.canMove( to.se.x, to.se.y )).toBe( false );
-	expect( R.canMove( to.sw.x, to.sw.y )).toBe( false );
+	expect( R.canMove( to.ne.x, to.ne.y ) ).toBe( false );
+	expect( R.canMove( to.nw.x, to.nw.y ) ).toBe( false );
+	expect( R.canMove( to.se.x, to.se.y ) ).toBe( false );
+	expect( R.canMove( to.sw.x, to.sw.y ) ).toBe( false );
 });
 
 test( "Rook cannot hop across the board", () => {
@@ -135,13 +135,13 @@ test( "Rook cannot hop across the board", () => {
 	};
 	const R = new Rook( from );
 
-	expect( R.canMove( to )).toBe( false );
+	expect( R.canMove( to ) ).toBe( false );
 });
 
 test( "canMove returns false if a coordinate is NaN", () => {
 	const R = new Rook();
 
-	expect( R.canMove( 0, "fooBar" )).toBe( false );
-	expect( R.canMove( "fooBar", 0 )).toBe( false );
+	expect( R.canMove( 0, "fooBar" ) ).toBe( false );
+	expect( R.canMove( "fooBar", 0 ) ).toBe( false );
 
 });

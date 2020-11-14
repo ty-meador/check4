@@ -3,7 +3,7 @@
 import {
 	Pawn,
 	Piece
-} from "./Pieces.js";
+} from "../src/Pieces.js";
 
 test( "reversed property defaults to false", () => {
 	const P = new Pawn();
@@ -21,11 +21,11 @@ test( "canMove returns false if a coordinate is NaN", () => {
 	expect( P.canMove({
 		x: 0,
 		y: "fooBar"
-	})).toBe( false );
+	}) ).toBe( false );
 	expect( P.canMove({
 		x: "fooBar",
 		y: 0
-	})).toBe( false );
+	}) ).toBe( false );
 });
 
 test( "pawn can be reversed", () => {
@@ -41,8 +41,8 @@ test ( "Pawn.getDirection returns correct value", () => {
 	const P = new Pawn();
 	expect( P.getDirection() ).toBe( "up" );
 	P.reverseDirection();
-	expect(P.getDirection()).toBe( "down" );
-})
+	expect( P.getDirection() ).toBe( "down" );
+});
 
 test( "pawn can be initialized with reverse property", () => {
 	const P = new Pawn({
@@ -56,8 +56,8 @@ test( "pawn can be initialized with coordinates", () => {
 		x: 0,
 		y: 3
 	});
-	expect( P.x()).toBe( 0 );
-	expect( P.y()).toBe( 3 );
+	expect( P.x() ).toBe( 0 );
+	expect( P.y() ).toBe( 3 );
 });
 
 test( "Set direction works", () => {
@@ -74,7 +74,7 @@ test( "Setting an invalid direction throws an error", () => {
 	expect( () => {
 		P.setDirection( "foo" );
 	}).toThrow();
-})
+});
 
 test( "Pawn move test 1", () => {
 	const from = {
@@ -87,12 +87,12 @@ test( "Pawn move test 1", () => {
 	};
 	const P = new Pawn( from );
 
-	expect( P.canMove( to.x, to.y, false )).toBe( false );
-	expect( P.canMove( to.x, to.y, true )).toBe( false );
+	expect( P.canMove( to.x, to.y, false ) ).toBe( false );
+	expect( P.canMove( to.x, to.y, true ) ).toBe( false );
 
 	P.reverseDirection();
-	expect( P.canMove( to.x, to.y, false )).toBe( false );
-	expect( P.canMove( to.x, to.y, true )).toBe( false );
+	expect( P.canMove( to.x, to.y, false ) ).toBe( false );
+	expect( P.canMove( to.x, to.y, true ) ).toBe( false );
 });
 
 test( "Pawn move test 2", () => {
@@ -106,12 +106,12 @@ test( "Pawn move test 2", () => {
 	};
 	const P = new Pawn( from );
 
-	expect( P.canMove( to.x, to.y, false )).toBe( false );
-	expect( P.canMove( to.x, to.y, true )).toBe( false );
+	expect( P.canMove( to.x, to.y, false ) ).toBe( false );
+	expect( P.canMove( to.x, to.y, true ) ).toBe( false );
 
 	P.reverseDirection();
-	expect( P.canMove( to.x, to.y, false )).toBe( false );
-	expect( P.canMove( to.x, to.y, true )).toBe( false );
+	expect( P.canMove( to.x, to.y, false ) ).toBe( false );
+	expect( P.canMove( to.x, to.y, true ) ).toBe( false );
 });
 
 test( "Pawn move test 3", () => {
@@ -125,12 +125,12 @@ test( "Pawn move test 3", () => {
 	};
 	const P = new Pawn( from );
 
-	expect( P.canMove( to.x, to.y, false )).toBe( false );
-	expect( P.canMove( to.x, to.y, true )).toBe( true );
+	expect( P.canMove( to.x, to.y, false ) ).toBe( false );
+	expect( P.canMove( to.x, to.y, true ) ).toBe( true );
 
 	P.reverseDirection();
-	expect( P.canMove( to.x, to.y, false )).toBe( false );
-	expect( P.canMove( to.x, to.y, true )).toBe( false );
+	expect( P.canMove( to.x, to.y, false ) ).toBe( false );
+	expect( P.canMove( to.x, to.y, true ) ).toBe( false );
 });
 
 test( "Pawn move test 4", () => {
@@ -144,12 +144,12 @@ test( "Pawn move test 4", () => {
 	};
 	const P = new Pawn( from );
 
-	expect( P.canMove( to.x, to.y, false )).toBe( false );
-	expect( P.canMove( to.x, to.y, false )).toBe( false );
+	expect( P.canMove( to.x, to.y, false ) ).toBe( false );
+	expect( P.canMove( to.x, to.y, false ) ).toBe( false );
 
 	P.reverseDirection();
-	expect( P.canMove( to.x, to.y, false )).toBe( false );
-	expect( P.canMove( to.x, to.y, true )).toBe( true );
+	expect( P.canMove( to.x, to.y, false ) ).toBe( false );
+	expect( P.canMove( to.x, to.y, true ) ).toBe( true );
 });
 
 test( "Pawn move test 5", () => {
@@ -163,12 +163,12 @@ test( "Pawn move test 5", () => {
 	};
 	const P = new Pawn( from );
 
-	expect( P.canMove( to.x, to.y, false )).toBe( true );
-	expect( P.canMove( to.x, to.y, true )).toBe( false );
+	expect( P.canMove( to.x, to.y, false ) ).toBe( true );
+	expect( P.canMove( to.x, to.y, true ) ).toBe( false );
 
 	P.reverseDirection();
-	expect( P.canMove( to.x, to.y, false )).toBe( false );
-	expect( P.canMove( to.x, to.y, true )).toBe( false );
+	expect( P.canMove( to.x, to.y, false ) ).toBe( false );
+	expect( P.canMove( to.x, to.y, true ) ).toBe( false );
 });
 
 test( "Pawn move test 6", () => {
@@ -182,12 +182,12 @@ test( "Pawn move test 6", () => {
 	};
 	const P = new Pawn( from );
 
-	expect( P.canMove( to.x, to.y, false )).toBe( false );
-	expect( P.canMove( to.x, to.y, true )).toBe( false );
+	expect( P.canMove( to.x, to.y, false ) ).toBe( false );
+	expect( P.canMove( to.x, to.y, true ) ).toBe( false );
 
 	P.reverseDirection();
-	expect( P.canMove( to.x, to.y, false )).toBe( true );
-	expect( P.canMove( to.x, to.y, true )).toBe( false );
+	expect( P.canMove( to.x, to.y, false ) ).toBe( true );
+	expect( P.canMove( to.x, to.y, true ) ).toBe( false );
 });
 
 test( "Pawn move test 7", () => {
@@ -201,10 +201,10 @@ test( "Pawn move test 7", () => {
 	};
 	const P = new Pawn( from );
 
-	expect( P.canMove( to.x, to.y, false )).toBe( false );
-	expect( P.canMove( to.x, to.y, true )).toBe( false );
+	expect( P.canMove( to.x, to.y, false ) ).toBe( false );
+	expect( P.canMove( to.x, to.y, true ) ).toBe( false );
 
 	P.reverseDirection();
-	expect( P.canMove( to.x, to.y, false )).toBe( false );
-	expect( P.canMove( to.x, to.y, true )).toBe( false );
+	expect( P.canMove( to.x, to.y, false ) ).toBe( false );
+	expect( P.canMove( to.x, to.y, true ) ).toBe( false );
 });

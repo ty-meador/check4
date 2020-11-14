@@ -1,7 +1,7 @@
 "ues strict";
 import {
 	Piece
-} from "./Pieces.js";
+} from "../src/Pieces.js";
 
 test( "Piece properly initializes", () => {
 	const P = new Piece({});
@@ -48,15 +48,15 @@ test( "Initializing a piece with NaN coordinates throws an error", () => {
 test( "Piece.move accepts null for either coordinate", () => {
 	const P = new Piece();
 
-	expect(() => {
+	expect( () => {
 		P.move( null, 0 );
 	}).not.toThrow();
 
-	expect(() => {
+	expect( () => {
 		P.move( 0, null );
 	}).not.toThrow();
 
-	expect(() => {
+	expect( () => {
 		P.move( null, null );
 	}).not.toThrow();
 });
@@ -73,7 +73,7 @@ test( "move throws error if either coordinate is NaN", () => {
 	expect( err.message ).toBe( "Coordinates must be integers or null" );
 
 	// Reset for next test
-	err = null
+	err = null;
 
 	try{
 		P.move( 0, "y" );
@@ -144,8 +144,8 @@ test( "Initializing a piece with only 1 coordinate does not throw error", () => 
 		err = e;
 	}
 	expect( err ).toBe( null );
-	expect( P.x()).toBe( 5 );
-	expect( P.y()).toBe( undefined );
+	expect( P.x() ).toBe( 5 );
+	expect( P.y() ).toBe( undefined );
 
 	err = null; // Reset for next test
 	try {
@@ -156,8 +156,8 @@ test( "Initializing a piece with only 1 coordinate does not throw error", () => 
 		err = e;
 	}
 	expect( err ).toBe( null );
-	expect( P.y()).toBe( 5 );
-	expect( P.x()).toBe( undefined );
+	expect( P.y() ).toBe( 5 );
+	expect( P.x() ).toBe( undefined );
 });
 
 test( "Piece can be initialized with coordinates", () => {
@@ -215,7 +215,7 @@ test( "Piece.move sets the pieces coordinates to those specified", () => {
 
 test( "Piece.canMove returns false", () => {
 	const P = new Piece();
-	expect( P.canMove( 0, 0 )).toBe( false );
+	expect( P.canMove( 0, 0 ) ).toBe( false );
 });
 
 test( "Piece.reset changes the current coordinates back to the initial coordinates", () => {
@@ -239,15 +239,15 @@ test( "Piece.x() and Piece.y() return currenct coordinates", () => {
 		y: 1
 	});
 
-	expect( P.x()).toBe( 0 );
-	expect( P.x()).toBe( P.coords[0] );
-	expect( P.y()).toBe( 1 );
-	expect( P.y()).toBe( P.coords[1] );
+	expect( P.x() ).toBe( 0 );
+	expect( P.x() ).toBe( P.coords[0] );
+	expect( P.y() ).toBe( 1 );
+	expect( P.y() ).toBe( P.coords[1] );
 
 	P.move( 3, 5 );
-	expect( P.x()).toBe( 3 );
-	expect( P.x()).toBe( P.coords[0] );
-	expect( P.y()).toBe( 5 );
-	expect( P.y()).toBe( P.coords[1] );
+	expect( P.x() ).toBe( 3 );
+	expect( P.x() ).toBe( P.coords[0] );
+	expect( P.y() ).toBe( 5 );
+	expect( P.y() ).toBe( P.coords[1] );
 
 });

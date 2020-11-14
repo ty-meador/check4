@@ -141,16 +141,25 @@ export class Check4 {
 		};
 
 		// Only return pieces that are on the board.
-		if ( !this._inGutter( this.state.p1.pawn ) ) state.p = this.state.p1.pawn;
-		if ( !this._inGutter( this.state.p1.rook ) ) state.r = this.state.p1.rook;
-		if ( !this._inGutter( this.state.p1.bishop ) ) state.b = this.state.p1.bishop;
-		if ( !this._inGutter( this.sttate.p1.knight ) ) state.k = this.state.p1.knight;
-		if ( !this._inGutter( this.state.p2.pawn ) ) state.p = this.state.p2.pawn;
-		if ( !this._inGutter( this.state.p2.rook ) ) state.r = this.state.p2.rook;
-		if ( !this._inGutter( this.state.p2.bishop ) ) state.b = this.state.p2.bishop;
-		if ( !this._inGutter( this.sttate.p2.knight ) ) state.k = this.state.p2.knight;
+		if ( !this._inGutter( this.state.p1.pawn ) ) addPieceToState( 1, "p", this.state.p1.pawn );
+		if ( !this._inGutter( this.state.p1.rook ) ) addPieceToState( 1, "r", this.state.p1.rook );
+		if ( !this._inGutter( this.state.p1.bishop ) ) addPieceToState( 1, "b", state.p1.b = this.state.p1.bishop );
+		if ( !this._inGutter( this.state.p1.knight ) ) addPieceToState( 1, "k", this.state.p1.knight );
+		if ( !this._inGutter( this.state.p2.pawn ) ) addPieceToState( 2, "p", this.state.p2.pawn );
+		if ( !this._inGutter( this.state.p2.rook ) ) addPieceToState( 2, "r", this.state.p2.rook );
+		if ( !this._inGutter( this.state.p2.bishop ) ) addPieceToState( 2, "b", this.state.p2.bishop );
+		if ( !this._inGutter( this.state.p2.knight ) ) addPieceToState( 2, "k", this.state.p2.knight );
 
 		return state;
+
+		function addPieceToState( playerNum, pieceName, pieceObj ){
+			let key = `p${playerNum}`;
+			if( !state[ key ] ) state[ key ] = {};
+			state[ key ][ pieceName ] = {
+				x: pieceObj.x(),
+				y: pieceObj.y()
+			};
+		}
 	}
 
 	/**
@@ -232,8 +241,8 @@ export class Check4 {
    * @throws IllegalMoveException - Throws if data.x or data.y are not parseable ints
    */
 	_normalizeData( data, next ) {
-		if ( !data.player ) next( new TypeError( "No player specified" ) );
-		if ( !data.piece ) next( new TypeError( "No piece specified" ) );
+		if ( !data.player ) throw new TypeError( "No player specified" );
+		if ( !data.piece ) throw new TypeError( "No piece specified" );
 		data.playerNum = parseInt( data.player );
 		data.player = data.playerNum === 1 ? this.state.p1 : this.state.p2;
 		data.piece = data.player[data.piece.toLowerCase()];

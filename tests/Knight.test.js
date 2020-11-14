@@ -1,7 +1,7 @@
 import {
 	Knight,
 	Piece
-} from "./Pieces.js";
+} from "../src/Pieces.js";
 
 test( "Knight class extends Piece class", () => {
 	const K = new Knight();
@@ -18,7 +18,7 @@ test( "canMove returns false if a coordinate is NaN", () => {
 		y: 3
 	};
 	const K = new Knight( from );
-	expect( K.canMove( to.x, to.y )).toBe( false );
+	expect( K.canMove( to.x, to.y ) ).toBe( false );
 });
 
 test( "Movement test #1", () => {
@@ -31,7 +31,7 @@ test( "Movement test #1", () => {
 		y: 3
 	};
 	const K = new Knight( from );
-	expect( K.canMove( to.x, to.y )).toBe( true );
+	expect( K.canMove( to.x, to.y ) ).toBe( true );
 });
 
 test( "Movement test #2", () => {
@@ -44,7 +44,7 @@ test( "Movement test #2", () => {
 		y: 1
 	};
 	const K = new Knight( from );
-	expect( K.canMove( to.x, to.y )).toBe( true );
+	expect( K.canMove( to.x, to.y ) ).toBe( true );
 });
 
 test( "Movement test #3", () => {
@@ -57,7 +57,7 @@ test( "Movement test #3", () => {
 		y: 1
 	};
 	const K = new Knight( from );
-	expect( K.canMove( to.x, to.y )).toBe( false );
+	expect( K.canMove( to.x, to.y ) ).toBe( false );
 });
 
 test( "Movement test #4", () => {
@@ -70,7 +70,7 @@ test( "Movement test #4", () => {
 		y: 2
 	};
 	const K = new Knight( from );
-	expect( K.canMove( to.x, to.y )).toBe( true );
+	expect( K.canMove( to.x, to.y ) ).toBe( true );
 });
 
 test( "Movement test #5", () => {
@@ -83,7 +83,7 @@ test( "Movement test #5", () => {
 		y: 1
 	};
 	const K = new Knight( from );
-	expect( K.canMove( to.x, to.y )).toBe( true );
+	expect( K.canMove( to.x, to.y ) ).toBe( true );
 });
 
 test( "Movement test #6", () => {
@@ -96,7 +96,7 @@ test( "Movement test #6", () => {
 		y: 2
 	};
 	const K = new Knight( from );
-	expect( K.canMove( to.x, to.y )).toBe( false );
+	expect( K.canMove( to.x, to.y ) ).toBe( false );
 });
 
 test( "Movement test #7", () => {
@@ -109,5 +109,5 @@ test( "Movement test #7", () => {
 		y: 2
 	};
 	const K = new Knight( from );
-	expect( K.canMove( to.x, to.y )).toBe( true );
+	expect( K.canMove( to.x, to.y ) ).toBe( true );
 });

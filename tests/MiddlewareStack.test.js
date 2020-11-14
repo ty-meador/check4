@@ -2,13 +2,13 @@
 
 import {
 	MiddlewareStack
-} from "./MiddlewareStack.js";
+} from "../src/MiddlewareStack.js";
 
 test( "MiddlewareStack.use adds a layer to the MiddlewareStack", () => {
 	const S = new MiddlewareStack();
 
 	expect( S.stack.length ).toBe( 0 );
-	S.use(() => {});
+	S.use( () => {});
 	expect( S.stack.length ).toBe( 1 );
 });
 
@@ -16,11 +16,11 @@ test( "Calling next executes next layer in MiddlewareStack", () => {
 	const S = new MiddlewareStack();
 
 	let NEXT_LAYER_WAS_CALLED = false;
-	S.use(( data, next ) => {
+	S.use( ( data, next ) => {
 		next();
 	});
 
-	S.use(( data, next ) => {
+	S.use( () => {
 		NEXT_LAYER_WAS_CALLED = true;
 	});
 
@@ -35,17 +35,17 @@ test( "MiddlewareStack does not proceed to next layer unless next is called", ()
 	let SECOND_STD_HANDLER_WAS_CALLED = false;
 	let THIRD_STD_HANDLER_WAS_CALLED = false;
 
-	S.use(( data, next ) => {
+	S.use( ( data, next ) => {
 		next();
 	});
 
 	// Should be called because next() was explicitly called in previous layer
-	S.use(( data, next ) => {
+	S.use( () => {
 		SECOND_STD_HANDLER_WAS_CALLED = true;
 	});
 
 	// Should not be called because next() was not explicitly called in previous layer
-	S.use(( data, next ) => {
+	S.use( () => {
 		THIRD_STD_HANDLER_WAS_CALLED = false;
 	});
 
@@ -73,7 +73,7 @@ test( "dispatching with data sends data to every layer", () => {
 	let THIRD_STD_HANDLER_RECEIVED_DATA = false;
 	let THIRD_STD_HANDLER_RECEIVED_CORRECT_DATA = false;
 
-	S.use(( data, next ) => {
+	S.use( ( data, next ) => {
 		FIRST_STD_HANDLER_WAS_CALLED = true;
 		if ( data ) {
 			FIRST_STD_HANDLER_RECEIVED_DATA = true;
@@ -83,7 +83,7 @@ test( "dispatching with data sends data to every layer", () => {
 		next();
 	});
 
-	S.use(( data, next ) => {
+	S.use( ( data, next ) => {
 		SECOND_STD_HANDLER_WAS_CALLED = true;
 		if ( data ) {
 			SECOND_STD_HANDLER_RECEIVED_DATA = true;
@@ -94,7 +94,7 @@ test( "dispatching with data sends data to every layer", () => {
 	});
 
 
-	S.use(( data, next ) => {
+	S.use( ( data ) => {
 		THIRD_STD_HANDLER_WAS_CALLED = true;
 		if ( data ) {
 			THIRD_STD_HANDLER_RECEIVED_DATA = true;
@@ -123,12 +123,12 @@ test( "calling next on final layer does not throw an error if no final function 
 	let SECOND_STD_HANDLER_WAS_CALLED = false;
 	let DISPATCH_THREW = false;
 
-	S.use(( data, next ) => {
+	S.use( ( data, next ) => {
 		FIRST_STD_HANDLER_WAS_CALLED = true;
 		next();
 	});
 
-	S.use(( data, next ) => {
+	S.use( ( data, next ) => {
 		SECOND_STD_HANDLER_WAS_CALLED = true;
 		next();
 	});
@@ -148,7 +148,7 @@ test( "function passed to dispatch gets called if an error is thrown", () => {
 	const S = new MiddlewareStack();
 	let DISPATCH_FUNCTION_WAS_CALLED = false;
 
-	S.use(( data, next ) => {
+	S.use( () => {
 		throw new Error();
 	});
 
@@ -168,11 +168,11 @@ test( "function passed to dispatch gets called if next is called with an error a
 	let DISPATCH_FUNCTION_RECEIVED_ERROR = false;
 	let DISPATCH_FUNCTION_RECEIVED_CORRECT_ERROR = false;
 
-	S.use(( data, next ) => {
-		next( new Error( "ERROR_PASS" ));
+	S.use( ( data, next ) => {
+		next( new Error( "ERROR_PASS" ) );
 	});
 
-	S.use(( data, next ) => {
+	S.use( () => {
 		// Should not be called because it's not an error handler
 		STD_HANDLER_WAS_CALLED = true;
 	});
@@ -181,7 +181,7 @@ test( "function passed to dispatch gets called if next is called with an error a
 		DISPATCH_FUNCTION_WAS_CALLED = true;
 		if ( err ) {
 			DISPATCH_FUNCTION_RECEIVED_ERROR = true;
-			if ( err.message = "ERROR_PASS" )
+			if ( err.message === "ERROR_PASS" )
 				DISPATCH_FUNCTION_RECEIVED_CORRECT_ERROR = true;
 		}
 	});
@@ -214,16 +214,16 @@ test( "Throwing an error calls next layer that accepts 3 params", () => {
 	let ERR_HANDLER_RECEIVED_DATA = false;
 	let ERR_HANDLER_RECEIVED_CORRECT_DATA = false;
 
-	S.use(( data, next ) => {
-		next( new Error( "TEST_PASS" ));
+	S.use( ( data, next ) => {
+		next( new Error( "TEST_PASS" ) );
 	});
 
-	S.use(( data, next ) => {
+	S.use( ( data, next ) => {
 		// Should not be called because it is not an error-handling middleware`1
 		STD_HANDLER_WAS_CALLED = true;
 	});
 
-	S.use(( err, data, next ) => {
+	S.use( ( err, data, next ) => {
 		if ( err ) {
 			ERR_HANDLER_RECEIVED_ERROR = true;
 			if ( err.message === "TEST_PASS" )
@@ -235,6 +235,8 @@ test( "Throwing an error calls next layer that accepts 3 params", () => {
 			if ( data === "DATA_PASS" )
 				ERR_HANDLER_RECEIVED_CORRECT_DATA = true;
 		}
+
+		next();
 	});
 
 	S.dispatch( "DATA_PASS" );
@@ -250,16 +252,18 @@ test( "Layers with more than two params are skipped if no error is encountered",
 
 	let STD_HANDLER_WAS_CALLED = false;
 	let ERR_HANDLER_WAS_CALLED = false;
-	S.use(( data, next ) => {
+	S.use( ( data, next ) => {
 		next();
 	});
 
-	S.use(( err, data, next ) => {
+
+	// eslint-disable no-unused-vars
+	S.use( ( err, data, next ) => {
 		// Skip this error handler
 		ERR_HANDLER_WAS_CALLED = true;
 	});
 
-	S.use(( data, next ) => {
+	S.use( ( data, next ) => {
 		STD_HANDLER_WAS_CALLED = true;
 	});
 
@@ -277,11 +281,11 @@ test( "Error handling MiddlewareStack stops if next(error) is not explicitly cal
 	let FIRST_ERR_HANDLER_RECEIVED_CORRECT_ERROR = false;
 	let SECOND_ERR_HANDLER_WAS_CALLED = false;
 
-	S.use(( data, next ) => {
+	S.use( ( data, next ) => {
 		throw new Error( "PASS" );
 	});
 
-	S.use(( err, data, next ) => {
+	S.use( ( err, data, next ) => {
 		FIRST_ERR_HANDLER_WAS_CALLED = true;
 		if ( err ) {
 			FIRST_ERR_HANDLER_RECEIVED_ERROR = true;
@@ -291,7 +295,7 @@ test( "Error handling MiddlewareStack stops if next(error) is not explicitly cal
 
 	});
 
-	S.use(( err, data, next ) => {
+	S.use( ( err, data, next ) => {
 		// Should be skipped because next(err) was not explicitly called
 		SECOND_ERR_HANDLER_WAS_CALLED = true;
 	});
@@ -315,11 +319,11 @@ test( "MiddlewareStack proceeds to next error-handling layer if next(error) is e
 	let SECOND_ERR_HANDLER_RECEIVED_CORRECT_ERROR = false;
 	let SECOND_ERR_HANDLER_WAS_CALLED = false;
 
-	S.use(() => {
+	S.use( () => {
 		throw new Error( "PASS" );
 	});
 
-	S.use(( err, data, next ) => {
+	S.use( ( err, data, next ) => {
 		if ( err ) {
 			FIRST_ERR_HANDLER_RECEIVED_ERROR = true;
 			if ( err.message === "PASS" )
@@ -328,11 +332,11 @@ test( "MiddlewareStack proceeds to next error-handling layer if next(error) is e
 		next( err );
 	});
 
-	S.use(( data, next ) => {
+	S.use( ( data, next ) => {
 		STD_HANDLER_WAS_CALLED = true;
 	});
 
-	S.use(( err, data, next ) => {
+	S.use( ( err, data, next ) => {
 		SECOND_ERR_HANDLER_WAS_CALLED = true;
 		if ( err ) {
 			SECOND_ERR_HANDLER_RECEIVED_ERROR = true;
@@ -359,28 +363,28 @@ test( "MiddlewareStack properly routes standard and error handling middleware", 
 	let SECOND_STD_HANDLER_WAS_CALLED = false;
 	let THIRD_STD_HANDLER_WAS_CALLED = false;
 
-	S.use(( data, next ) => {
+	S.use( ( data, next ) => {
 		if ( data.throwErr )
 			throw new Error( "ERROR_HANDLING_CHECK" );
 		else
 			next();
 	});
 
-	S.use(( data, next ) => {
+	S.use( ( data, next ) => {
 		SECOND_STD_HANDLER_WAS_CALLED = true;
 		next();
 	});
 
-	S.use(( err, data, next ) => {
+	S.use( ( err, data, next ) => {
 		FIRST_ERR_HANDLER_WAS_CALLED = true;
 		next( err );
 	});
 
-	S.use(( data, next ) => {
+	S.use( ( data, next ) => {
 		THIRD_STD_HANDLER_WAS_CALLED = true;
 	});
 
-	S.use(( err, data, next ) => {
+	S.use( ( err, data, next ) => {
 		SECOND_ERR_HANDLER_WAS_CALLED = true;
 	});
 
@@ -414,15 +418,15 @@ test( "Throwing an error inside an error handler calls next error handler with e
 	let SECOND_ERR_HANDLER_RECEIVED_ERROR = false;
 	let SECOND_ERR_HANDLER_RECEIVED_CORRECT_ERROR = false;
 
-	S.use(( data, next ) => {
+	S.use( ( data, next ) => {
 		throw new Error();
 	});
 
-	S.use(( err, data, next ) => {
+	S.use( ( err, data, next ) => {
 		throw new Error( "ERROR_TEST" );
 	});
 
-	S.use(( err, data, next ) => {
+	S.use( ( err, data, next ) => {
 		SECOND_ERR_HANDLER_WAS_CALLED = true;
 		if ( err ) {
 			SECOND_ERR_HANDLER_RECEIVED_ERROR = true;
@@ -469,7 +473,7 @@ test( "Modified data persists to subsequent layers", () => {
 	let SECOND_STD_HANDLER_RECEIVED_DATA = false;
 	let SECOND_STD_HANDLER_RECEIVED_CORRECT_DATA = false;
 
-	S.use(( data, next ) => {
+	S.use( ( data, next ) => {
 		FIRST_STD_HANDLER_WAS_CALLED = true;
 		if( data ){
 			FIRST_STD_HANDLER_RECEIVED_DATA = true;
@@ -481,7 +485,7 @@ test( "Modified data persists to subsequent layers", () => {
 		next();
 	});
 
-	S.use(( data, next ) => {
+	S.use( ( data, next ) => {
 		SECOND_STD_HANDLER_WAS_CALLED = true;
 		if( data ){
 			SECOND_STD_HANDLER_RECEIVED_DATA = true;
@@ -511,17 +515,17 @@ test( "function passed to dispatch has access to dispatched data", () => {
 	let DISPATCH_FUNCTION_RECEIVED_CORRECT_DATA = false;
 	S.use( () => {
 		throw new Error();
-	})
+	});
 
 
-	S.dispatch( { foo: "bar" }, ( err, data ) => {
+	S.dispatch({ foo: "bar" }, ( err, data ) => {
 		DISPATCH_FUNCTION_WAS_CALLED = true;
 		if( data ){
 			DISPATCH_FUNCTION_RECEIVED_DATA = true;
 			if( data.foo === "bar" )
 				DISPATCH_FUNCTION_RECEIVED_CORRECT_DATA = true;
 		}
-	})
+	});
 
 	expect( DISPATCH_FUNCTION_WAS_CALLED ).toBe( true );
 	expect( DISPATCH_FUNCTION_RECEIVED_DATA ).toBe( true );

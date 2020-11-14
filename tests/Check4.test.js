@@ -2,7 +2,7 @@
 
 import {
 	Check4
-} from "./Check4.js";
+} from "../src/Check4.js";
 
 import {
 	Pawn,
@@ -10,17 +10,18 @@ import {
 	Rook,
 	Knight,
 	Piece
-} from "./Pieces.js";
+} from "../src/Pieces.js";
 
 import {
 	PlayerTurnException,
 	IllegalMoveException
-} from "./Check4Errors.js"
+} from "../src/Check4Errors.js";
 
 describe( "Check4 class", () => {
 	test( "creating game without players throws an error", () => {
 		try {
 			const Game = new Check4();
+			Game.x = 0; // Should never get this far
 		} catch ( e ) {
 			expect( e.message ).toBe( "You can't create a game without players!" );
 		}
@@ -36,15 +37,15 @@ describe( "Check4 class", () => {
 			}
 		});
 
-		expect( Game.state.p1.pawn.x()).toBe( null );
-		expect( Game.state.p1.rook.x()).toBe( null );
-		expect( Game.state.p1.knight.x()).toBe( null );
-		expect( Game.state.p1.bishop.x()).toBe( null );
+		expect( Game.state.p1.pawn.x() ).toBe( null );
+		expect( Game.state.p1.rook.x() ).toBe( null );
+		expect( Game.state.p1.knight.x() ).toBe( null );
+		expect( Game.state.p1.bishop.x() ).toBe( null );
 
-		expect( Game.state.p2.pawn.x()).toBe( null );
-		expect( Game.state.p2.rook.x()).toBe( null );
-		expect( Game.state.p2.knight.x()).toBe( null );
-		expect( Game.state.p2.bishop.x()).toBe( null );
+		expect( Game.state.p2.pawn.x() ).toBe( null );
+		expect( Game.state.p2.rook.x() ).toBe( null );
+		expect( Game.state.p2.knight.x() ).toBe( null );
+		expect( Game.state.p2.bishop.x() ).toBe( null );
 	});
 
 	test( "Check4 class can be instantiated with existing pieces", () => {
@@ -87,23 +88,23 @@ describe( "Check4 class", () => {
 			}
 		});
 
-		expect( Game.state.p1.pawn.x()).toBe( 0 );
-		expect( Game.state.p1.pawn.y()).toBe( 0 );
-		expect( Game.state.p1.rook.x()).toBe( 1 );
-		expect( Game.state.p1.rook.y()).toBe( 1 );
-		expect( Game.state.p1.bishop.x()).toBe( 2 );
-		expect( Game.state.p1.bishop.y()).toBe( 2 );
-		expect( Game.state.p1.knight.x()).toBe( 3 );
-		expect( Game.state.p1.knight.y()).toBe( 3 );
+		expect( Game.state.p1.pawn.x() ).toBe( 0 );
+		expect( Game.state.p1.pawn.y() ).toBe( 0 );
+		expect( Game.state.p1.rook.x() ).toBe( 1 );
+		expect( Game.state.p1.rook.y() ).toBe( 1 );
+		expect( Game.state.p1.bishop.x() ).toBe( 2 );
+		expect( Game.state.p1.bishop.y() ).toBe( 2 );
+		expect( Game.state.p1.knight.x() ).toBe( 3 );
+		expect( Game.state.p1.knight.y() ).toBe( 3 );
 
-		expect( Game.state.p2.pawn.x()).toBe( 0 );
-		expect( Game.state.p2.pawn.y()).toBe( 0 );
-		expect( Game.state.p2.rook.x()).toBe( 1 );
-		expect( Game.state.p2.rook.y()).toBe( 1 );
-		expect( Game.state.p2.bishop.x()).toBe( 2 );
-		expect( Game.state.p2.bishop.y()).toBe( 2 );
-		expect( Game.state.p2.knight.x()).toBe( 3 );
-		expect( Game.state.p2.knight.y()).toBe( 3 );
+		expect( Game.state.p2.pawn.x() ).toBe( 0 );
+		expect( Game.state.p2.pawn.y() ).toBe( 0 );
+		expect( Game.state.p2.rook.x() ).toBe( 1 );
+		expect( Game.state.p2.rook.y() ).toBe( 1 );
+		expect( Game.state.p2.bishop.x() ).toBe( 2 );
+		expect( Game.state.p2.bishop.y() ).toBe( 2 );
+		expect( Game.state.p2.knight.x() ).toBe( 3 );
+		expect( Game.state.p2.knight.y() ).toBe( 3 );
 	});
 
 	test( "Check4 class sets reset coordinates of all pieces to (null, null)", () => {
@@ -174,26 +175,168 @@ describe( "Check4 class", () => {
 				name: "p2"
 			}
 		});
-		expect( Game.state.p1.pawn.x()).toBe( null );
-		expect( Game.state.p1.pawn.y()).toBe( null );
-		expect( Game.state.p1.rook.x()).toBe( null );
-		expect( Game.state.p1.rook.y()).toBe( null );
-		expect( Game.state.p1.bishop.x()).toBe( null );
-		expect( Game.state.p1.bishop.y()).toBe( null );
-		expect( Game.state.p1.knight.x()).toBe( null );
-		expect( Game.state.p1.knight.y()).toBe( null );
+		expect( Game.state.p1.pawn.x() ).toBe( null );
+		expect( Game.state.p1.pawn.y() ).toBe( null );
+		expect( Game.state.p1.rook.x() ).toBe( null );
+		expect( Game.state.p1.rook.y() ).toBe( null );
+		expect( Game.state.p1.bishop.x() ).toBe( null );
+		expect( Game.state.p1.bishop.y() ).toBe( null );
+		expect( Game.state.p1.knight.x() ).toBe( null );
+		expect( Game.state.p1.knight.y() ).toBe( null );
 
-		expect( Game.state.p2.pawn.x()).toBe( null );
-		expect( Game.state.p2.pawn.y()).toBe( null );
-		expect( Game.state.p2.rook.x()).toBe( null );
-		expect( Game.state.p2.rook.y()).toBe( null );
-		expect( Game.state.p2.bishop.x()).toBe( null );
-		expect( Game.state.p2.bishop.y()).toBe( null );
-		expect( Game.state.p2.knight.x()).toBe( null );
-		expect( Game.state.p2.knight.y()).toBe( null );
+		expect( Game.state.p2.pawn.x() ).toBe( null );
+		expect( Game.state.p2.pawn.y() ).toBe( null );
+		expect( Game.state.p2.rook.x() ).toBe( null );
+		expect( Game.state.p2.rook.y() ).toBe( null );
+		expect( Game.state.p2.bishop.x() ).toBe( null );
+		expect( Game.state.p2.bishop.y() ).toBe( null );
+		expect( Game.state.p2.knight.x() ).toBe( null );
+		expect( Game.state.p2.knight.y() ).toBe( null );
 	});
 
-})
+	test( "Check4.getState returns properly formatted state", () => {
+		const Game = new Check4({
+			p1:{ name: "p1" },
+			p2:{ name: "p2" }
+		});
+
+		let S = Game.getState();
+		expect( S.turn ).toBe( 1 );
+		expect( S.turnCount ).toBe( 0 );
+		expect( S.winner ).toBe( null );
+		expect( typeof S.p1 ).toBe( "undefined" );
+
+		Game.takeTurn({
+			player: 1,
+			piece: "pawn",
+			x: 0,
+			y: 0
+		});
+
+		S = Game.getState();
+		expect( S.turn ).toBe( 2 );
+		expect( S.turnCount ).toBe( 1 );
+		expect( S.winner ).toBe( null );
+		expect( JSON.stringify( S.p1 ) ).toBe( JSON.stringify({ p: {x:0, y:0 } }) );
+
+		Game.takeTurn({
+			player: 2,
+			piece: "rook",
+			x: 1,
+			y: 1
+		});
+
+		S = Game.getState();
+		expect( S.turn ).toBe( 1 );
+		expect( S.turnCount ).toBe( 2 );
+		expect( S.winner ).toBe( null );
+		expect( JSON.stringify( S.p2 ) ).toBe( JSON.stringify({ r: {x:1, y:1 } }) );
+
+		Game.takeTurn({
+			player: 1,
+			piece: "bishop",
+			x: 2,
+			y: 2
+		});
+
+		S = Game.getState();
+		expect( S.turn ).toBe( 2 );
+		expect( S.turnCount ).toBe( 3 );
+		expect( S.winner ).toBe( null );
+		expect( JSON.stringify( S.p1 ) ).toBe( JSON.stringify({
+			p: { x:0, y:0 },
+			b: { x:2, y:2 }
+		}) );
+
+		Game.takeTurn({
+			player: 2,
+			piece: "knight",
+			x: 3,
+			y: 3
+		});
+
+		S = Game.getState();
+		expect( S.turn ).toBe( 1 );
+		expect( S.turnCount ).toBe( 4 );
+		expect( S.winner ).toBe( null );
+		expect( JSON.stringify( S.p2 ) ).toBe( JSON.stringify({
+			r: { x:1, y:1 },
+			k: { x:3, y:3 }
+		}) );
+
+		Game.takeTurn({
+			player: 1,
+			piece: "rook",
+			x: 3,
+			y: 2
+		});
+
+		S = Game.getState();
+		expect( S.turn ).toBe( 2 );
+		expect( S.turnCount ).toBe( 5 );
+		expect( S.winner ).toBe( null );
+		expect( JSON.stringify( S.p1 ) ).toBe( JSON.stringify({
+			p: { x:0, y:0 },
+			r: { x:3, y:2 },
+			b: { x:2, y:2 }
+		}) );
+
+		Game.takeTurn({
+			player: 2,
+			piece: "pawn",
+			x: 1,
+			y: 3
+		});
+
+		S = Game.getState();
+		expect( S.turn ).toBe( 1 );
+		expect( S.turnCount ).toBe( 6 );
+		expect( S.winner ).toBe( null );
+		expect( JSON.stringify( S.p2 ) ).toBe( JSON.stringify({
+			p: { x:1, y:3 },
+			r: { x:1, y:1 },
+			k: { x:3, y:3 }
+		}) );
+
+		Game.takeTurn({
+			player: 1,
+			piece: "knight",
+			x: 2,
+			y: 1
+		});
+
+		S = Game.getState();
+		expect( S.turn ).toBe( 2 );
+		expect( S.turnCount ).toBe( 7 );
+		expect( S.winner ).toBe( null );
+		expect( JSON.stringify( S.p1 ) ).toBe( JSON.stringify({
+			p: { x:0, y:0 },
+			r: { x:3, y:2 },
+			b: { x:2, y:2 },
+			k: { x:2, y:1 }
+		}) );
+
+		Game.takeTurn({
+			player: 2,
+			piece: "bishop",
+			x: 1,
+			y: 2
+		});
+
+		S = Game.getState();
+		expect( S.turn ).toBe( 1 );
+		expect( S.turnCount ).toBe( 8 );
+		expect( S.winner ).toBe( null );
+		expect( JSON.stringify( S.p2 ) ).toBe( JSON.stringify({
+			p: { x:1, y:3 },
+			r: { x:1, y:1 },
+			b: { x:1, y:2 },
+			k: { x:3, y:3 }
+		}) );
+
+	});
+
+});
 
 
 describe( "Turn control", () => {
@@ -265,7 +408,7 @@ describe( "Turn control", () => {
 		});
 
 		expect( Game.state.turn ).toBe( 2 );
-	})
+	});
 
 	test( "Each turn alternates players", () => {
 		const Game = new Check4({
@@ -295,7 +438,7 @@ describe( "Turn control", () => {
 		});
 		expect( Game.state.turn ).toBe( 1 );
 	});
-})
+});
 
 describe( "Turn counter", () => {
 	test( "increments on each sucessful turn", () => {
@@ -350,6 +493,7 @@ describe( "Turn counter", () => {
 
 		expect( Game.state.turnCount ).toBe( 1 );
 
+		let err = null;
 		// Turn will fail because it is player2s turn
 		try{
 			Game.takeTurn({
@@ -358,11 +502,14 @@ describe( "Turn counter", () => {
 				x: 0,
 				y: 1
 			});
-		} catch ( e ){}
+		} catch ( e ){
+			err = e;
+		}
 
 		expect( Game.state.turnCount ).toBe( 1 );
-	})
-})
+		expect( err instanceof PlayerTurnException ).toBe( true );
+	});
+});
 
 describe( "Movements from the gutter" , () => {
 	test( "Any piece can move from the gutter to any empty square", () => {
@@ -452,7 +599,7 @@ describe( "Movements from the gutter" , () => {
 
 		Game.takeTurn({
 			player: 1,
-			piece: 'rook',
+			piece: "rook",
 			x:0,
 			y:0
 		});
@@ -468,14 +615,14 @@ describe( "Movements from the gutter" , () => {
 			GAME_THREW = true;
 			if( e instanceof IllegalMoveException ){
 				GAME_THREW_MOVEMENT_ERROR = true;
-				ERR_MSG = e.message
+				ERR_MSG = e.message;
 			}
 		}
 
 		expect( GAME_THREW ).toBe( true );
 		expect( GAME_THREW_MOVEMENT_ERROR ).toBe( true );
 		expect( ERR_MSG ).toBe( "Pieces moved from the gutter must be placed on an empty square" );
-	})
+	});
 });
 
 describe( "Attacks", () => {
@@ -601,7 +748,7 @@ describe( "Rook and Bishop cannot jump other pieces", () => {
 
 		Game.takeTurn({
 			player:2,
-			piece: 'pawn',
+			piece: "pawn",
 			x: 0,
 			y: 1
 		});
@@ -641,7 +788,7 @@ describe( "Rook and Bishop cannot jump other pieces", () => {
 
 		Game.takeTurn({
 			player:2,
-			piece: 'pawn',
+			piece: "pawn",
 			x: 0,
 			y: 1
 		});
@@ -681,7 +828,7 @@ describe( "Rook and Bishop cannot jump other pieces", () => {
 
 		Game.takeTurn({
 			player:2,
-			piece: 'pawn',
+			piece: "pawn",
 			x: 1,
 			y: 1
 		});
@@ -721,7 +868,7 @@ describe( "Rook and Bishop cannot jump other pieces", () => {
 
 		Game.takeTurn({
 			player:2,
-			piece: 'pawn',
+			piece: "pawn",
 			x: 1,
 			y: 1
 		});
@@ -1191,7 +1338,7 @@ describe( "Pawn movement", () => {
 
 		Game.takeTurn({
 			player: 1,
-			piece: 'rook',
+			piece: "rook",
 			x: 3,
 			y: 3
 		});
@@ -1242,7 +1389,7 @@ describe( "Pawn movement", () => {
 
 		Game.takeTurn({
 			player: 1,
-			piece: 'rook',
+			piece: "rook",
 			x: 3,
 			y: 3
 		});
@@ -1278,14 +1425,14 @@ describe( "Pawn movement", () => {
 
 		Game.takeTurn({
 			player: 1,
-			piece: 'pawn',
+			piece: "pawn",
 			x: 0,
 			y: 2
 		});
 
 		Game.takeTurn({
 			player: 2,
-			piece: 'pawn',
+			piece: "pawn",
 			x: 0,
 			y: 1
 		});
@@ -1300,14 +1447,14 @@ describe( "Pawn movement", () => {
 
 		Game.takeTurn({
 			player: 2,
-			piece: 'pawn',
+			piece: "pawn",
 			x: 0,
 			y: 0
 		});
 
 		expect( Game.state.p1.pawn.getDirection() ).toBe( "down" );
 		expect( Game.state.p2.pawn.getDirection() ).toBe( "up" );
-	})
+	});
 
 	test( "pawn direction changes if placed directly on enemies home row from gutter", () => {
 		const Game = new Check4({
@@ -1321,14 +1468,14 @@ describe( "Pawn movement", () => {
 		// Move each pawn from the gutter to its respective enemies home row
 		Game.takeTurn({
 			player: 1,
-			piece: 'pawn',
+			piece: "pawn",
 			x: 0,
 			y: 3
 		});
 
 		Game.takeTurn({
 			player: 2,
-			piece: 'pawn',
+			piece: "pawn",
 			x: 0,
 			y: 0
 		});
@@ -1353,14 +1500,14 @@ describe( "Win scenarios", () => {
 
 		Game.takeTurn({
 			player: 1,
-			piece: 'pawn',
+			piece: "pawn",
 			x: 0,
 			y: 0
 		});
 
 		Game.takeTurn({
 			player: 2,
-			piece: 'pawn',
+			piece: "pawn",
 			x: 0,
 			y: 1
 		});
@@ -1374,7 +1521,7 @@ describe( "Win scenarios", () => {
 
 		Game.takeTurn({
 			player: 2,
-			piece: 'rook',
+			piece: "rook",
 			x: 1,
 			y: 1
 		});
@@ -1417,14 +1564,14 @@ describe( "Win scenarios", () => {
 
 		Game.takeTurn({
 			player: 1,
-			piece: 'pawn',
+			piece: "pawn",
 			x: 0,
 			y: 0
 		});
 
 		Game.takeTurn({
 			player: 2,
-			piece: 'pawn',
+			piece: "pawn",
 			x: 2,
 			y: 1
 		});
@@ -1438,7 +1585,7 @@ describe( "Win scenarios", () => {
 
 		Game.takeTurn({
 			player: 2,
-			piece: 'rook',
+			piece: "rook",
 			x: 1,
 			y: 1
 		});
@@ -1481,14 +1628,14 @@ describe( "Win scenarios", () => {
 
 		Game.takeTurn({
 			player: 1,
-			piece: 'pawn',
+			piece: "pawn",
 			x: 0,
 			y: 0
 		});
 
 		Game.takeTurn({
 			player: 2,
-			piece: 'pawn',
+			piece: "pawn",
 			x: 2,
 			y: 1
 		});
@@ -1502,7 +1649,7 @@ describe( "Win scenarios", () => {
 
 		Game.takeTurn({
 			player: 2,
-			piece: 'rook',
+			piece: "rook",
 			x: 1,
 			y: 0
 		});
@@ -1579,7 +1726,7 @@ describe( "internal method tests", () => {
 		}).toThrow();
 
 		expect( () => {
-			Game._inGutter( {} );
+			Game._inGutter({});
 		}).toThrow();
 
 		expect( () => {
@@ -1597,45 +1744,43 @@ describe( "middleware tests", () => {
 			p1:{ name: "p1" },
 			p2:{ name: "p2" }
 		});
-
-		let err = null
 		expect( () => {
-			console.log(Game._normalizeData( {
+			Game._normalizeData({
 				player:1,
 				piece: "pawn",
 				x: 0
-			}, next ));
+			}, next );
 		}).toThrow();
 
 		expect( () => {
-			console.log(Game._normalizeData( {
+			Game._normalizeData({
 				player:1,
 				piece: "pawn",
 				y: 0
-			}, next ));
+			}, next );
 		}).toThrow();
 
 		expect( () => {
-			console.log(Game._normalizeData( {
+			Game._normalizeData({
 				player:1,
 				piece: "pawn",
-			}, next ));
+			}, next );
 		}).toThrow();
 
 		expect( () => {
-			console.log(Game._normalizeData( {
+			Game._normalizeData({
 				player:1,
 				piece: "pawn",
 				x: "a"
-			}, next ));
+			}, next );
 		}).toThrow();
 
 		expect( () => {
-			console.log(Game._normalizeData( {
+			Game._normalizeData({
 				player:1,
 				piece: "pawn",
 				y: "a"
-			}, next ));
+			}, next );
 		}).toThrow();
 	});
 
@@ -1647,7 +1792,7 @@ describe( "middleware tests", () => {
 
 		expect( () => Game._isGameOver( null, next ) ).not.toThrow();
 
-		Game.state.winner=1
+		Game.state.winner=1;
 
 		expect( () => Game._isGameOver() ).toThrow();
 	});
@@ -1669,8 +1814,28 @@ describe( "middleware tests", () => {
 			err = e;
 		}
 
-		console.log( err );		
 		expect( err instanceof TypeError  ).toBe( true );
-		expect( err.message ).toBe( "" );
+		expect( err.message ).toBe( "No player specified" );
+	});
+
+	test( "_normalizeData throws if no piece is specified", () => {
+		const Game = new Check4({
+			p1:{ name: "p1" },
+			p2:{ name: "p2" }
+		});
+
+		let err = null;
+		try {
+			Game._normalizeData({
+				player: 1,
+				x:0,
+				y:0
+			}, next );
+		} catch( e ){
+			err = e;
+		}
+
+		expect( err instanceof TypeError  ).toBe( true );
+		expect( err.message ).toBe( "No piece specified" );
 	});
 });

@@ -1,11 +1,11 @@
-"use strict"
+"use strict";
 
 import {
 	GameException,
 	PlayerTurnException,
 	IllegalMoveException,
 	GameOverException
-} from "./Check4Errors.js"
+} from "../src/Check4Errors.js";
 
 describe( "GameException", () => {
 	test( "message defaults to 'GAME_EXCEPTION'", () => {
@@ -17,7 +17,7 @@ describe( "GameException", () => {
 		let e = new GameException( "FOO:BAR" );
 		expect( e.message ).toBe( "FOO:BAR" );
 	});
-})
+});
 
 describe( "PlayerTurnException", () => {
 	test( "extends GameException", () => {
@@ -41,7 +41,7 @@ describe( "PlayerTurnException", () => {
 	});
 
 	test( "data is set to second parameter", () => {
-		let e = new PlayerTurnException( "", { foo: "bar" } );
+		let e = new PlayerTurnException( "", { foo: "bar" });
 		expect( e.data ).not.toBe( undefined );
 		expect( e.data.foo ).toBe( "bar" );
 	});
@@ -69,7 +69,7 @@ describe( "IllegalMoveException", () => {
 	});
 
 	test( "data is set to second parameter", () => {
-		let e = new IllegalMoveException( "", { foo: "bar" } );
+		let e = new IllegalMoveException( "", { foo: "bar" });
 		expect( e.data ).not.toBe( undefined );
 		expect( e.data.foo ).toBe( "bar" );
 	});
@@ -97,7 +97,7 @@ describe( "GameOverException", () => {
 	});
 
 	test( "data is set to second parameter", () => {
-		let e = new GameOverException( "", { foo: "bar" } );
+		let e = new GameOverException( "", { foo: "bar" });
 		expect( e.data ).not.toBe( undefined );
 		expect( e.data.foo ).toBe( "bar" );
 	});
