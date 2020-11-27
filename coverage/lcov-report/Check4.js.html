@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">98.71% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>153/153</span>
+                <span class='fraction'>153/155</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">98.53% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>134/134</span>
+                <span class='fraction'>134/136</span>
             </div>
         
             
@@ -547,7 +547,9 @@
 <a name='L488'></a><a href='#L488'>488</a>
 <a name='L489'></a><a href='#L489'>489</a>
 <a name='L490'></a><a href='#L490'>490</a>
-<a name='L491'></a><a href='#L491'>491</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L491'></a><a href='#L491'>491</a>
+<a name='L492'></a><a href='#L492'>492</a>
+<a name='L493'></a><a href='#L493'>493</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -908,6 +910,7 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -923,6 +926,7 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1386,33 +1390,35 @@ export class Check4 {
 			// If the x coords didn't change, they moved vertical
 			if ( data.piece.x() === data.x ) {
 				/*
-         **	Checks each square betwenn oldY and newY to see if it was _occupied by a piece. If it was, the move is invalid
-         **
-         **	NOTE: does not check oldY and newY, just the squares betwen them
-         */
+		         **	Checks each square betwenn oldY and newY to see if it was _occupied by a piece. If it was, the move is invalid
+		         **
+		         **	NOTE: does not check oldY and newY, just the squares betwen them
+		         */
 				let lowY = ( data.y &gt; data.piece.y() ? data.piece.y() : data.y ) + 1;
 				let highY = data.y &gt; data.piece.y() ? data.y : data.piece.y();
 &nbsp;
-				for ( lowY; lowY &lt; highY; lowY++ ) {
+				while ( lowY &lt; highY ) {
 					<span class="missing-if-branch" title="else path not taken" >E</span>if ( this._occupied( data.x, lowY ) )
 						next(
 							new IllegalMoveException( "Rooks cannot jump over other pieces" )
 						);
+<span class="cstat-no" title="statement not covered" >					lowY++;</span>
 				}
 			} else {
 				/*
-         **	Checks each square betwenn oldX and newX to see if it was occupide by a piece. If it was, the move is invalid
-         **
-         **	NOTE: does not check oldY and newY, just the squares betwen them
-         */
+		         **	Checks each square betwenn oldX and newX to see if it was occupide by a piece. If it was, the move is invalid
+		         **
+		         **	NOTE: does not check oldY and newY, just the squares betwen them
+		         */
 				let lowX = ( data.x &gt; data.piece.x() ? data.piece.x() : data.x ) + 1;
 				let highX = data.x &gt; data.piece.x() ? data.x : data.piece.x();
 &nbsp;
-				for ( lowX; lowX &lt; highX; lowX++ ) {
+				while ( lowX &lt; highX ) {
 					<span class="missing-if-branch" title="else path not taken" >E</span>if ( this._occupied( lowX, data.y ) )
 						next(
 							new IllegalMoveException( "Rooks cannot jump over other pieces" )
 						);
+<span class="cstat-no" title="statement not covered" >					lowX++;</span>
 				}
 			}
 		}
@@ -1428,13 +1434,13 @@ export class Check4 {
    * their own pieces
    */
 	_commitMove( data, next ) {
-		let _occupied = this._occupied( data.x, data.y );
+		let occupied = this._occupied( data.x, data.y );
 &nbsp;
-		if ( _occupied ) {
-			if ( _occupied.playerNum === data.playerNum ) {
+		if ( occupied ) {
+			if ( occupied.playerNum === data.playerNum ) {
 				next( new IllegalMoveException( "You cannot capture your own piece" ) );
 			} else {
-				_occupied.piece.reset();
+				occupied.piece.reset();
 			}
 		}
 &nbsp;
@@ -1534,7 +1540,7 @@ export default {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank">istanbul</a>
-                at Sat Nov 14 2020 17:29:05 GMT-0600 (Central Standard Time)
+                at Fri Nov 20 2020 19:23:37 GMT-0600 (Central Standard Time)
             </div>
         </div>
         <script src="prettify.js"></script>

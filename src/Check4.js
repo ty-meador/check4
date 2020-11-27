@@ -9,16 +9,16 @@ import {
 } from "./Check4Errors.js";
 
 /**
- * @class
- * Represents a single instance of a Check4 game
+ * Represents a single instance of a Check4 game in progress
  */
-export class Check4 {
+class Check4 {
 	constructor( props = {}) {
 		if ( !props.p1 || !props.p2 )
 			throw new Error( "You can't create a game without players!" );
 
 		this._onWin = props._onWin || ( () => {});
 
+		// Initial game state
 		this.state = {
 			turn: 1,
 			turnCount: 0,
@@ -228,7 +228,14 @@ export class Check4 {
 		return piece.x() === null && piece.y() === null;
 	}
 
-	/*********************** Rule Middleware **********************************/
+	/*********************** Rule Middleware Stack****************************
+	 * Purpose:	Each function represents a single "rule" in the game         *
+	 *                                                                       *
+	 * NOTES:	Each rule is in the order that it is executed in the         *
+	 *    Middleware Stack. Anytime next() is called, the game moves on to   *
+	 *    the next function. Each function represents a single atomic "rule" *
+	 *    of the game                                                        *
+	 *************************************************************************/
 
 	/**
    * Ensures that the data dispatched to the middleware is in a consistent format
@@ -347,33 +354,35 @@ export class Check4 {
 			// If the x coords didn't change, they moved vertical
 			if ( data.piece.x() === data.x ) {
 				/*
-         **	Checks each square betwenn oldY and newY to see if it was _occupied by a piece. If it was, the move is invalid
-         **
-         **	NOTE: does not check oldY and newY, just the squares betwen them
-         */
+		         **	Checks each square betwenn oldY and newY to see if it was _occupied by a piece. If it was, the move is invalid
+		         **
+		         **	NOTE: does not check oldY and newY, just the squares betwen them
+		         */
 				let lowY = ( data.y > data.piece.y() ? data.piece.y() : data.y ) + 1;
 				let highY = data.y > data.piece.y() ? data.y : data.piece.y();
 
-				for ( lowY; lowY < highY; lowY++ ) {
+				while ( lowY < highY ) {
 					if ( this._occupied( data.x, lowY ) )
 						next(
 							new IllegalMoveException( "Rooks cannot jump over other pieces" )
 						);
+					lowY++;
 				}
 			} else {
 				/*
-         **	Checks each square betwenn oldX and newX to see if it was occupide by a piece. If it was, the move is invalid
-         **
-         **	NOTE: does not check oldY and newY, just the squares betwen them
-         */
+		         **	Checks each square betwenn oldX and newX to see if it was occupide by a piece. If it was, the move is invalid
+		         **
+		         **	NOTE: does not check oldY and newY, just the squares betwen them
+		         */
 				let lowX = ( data.x > data.piece.x() ? data.piece.x() : data.x ) + 1;
 				let highX = data.x > data.piece.x() ? data.x : data.piece.x();
 
-				for ( lowX; lowX < highX; lowX++ ) {
+				while ( lowX < highX ) {
 					if ( this._occupied( lowX, data.y ) )
 						next(
 							new IllegalMoveException( "Rooks cannot jump over other pieces" )
 						);
+					lowX++;
 				}
 			}
 		}
@@ -389,13 +398,13 @@ export class Check4 {
    * their own pieces
    */
 	_commitMove( data, next ) {
-		let _occupied = this._occupied( data.x, data.y );
+		let occupied = this._occupied( data.x, data.y );
 
-		if ( _occupied ) {
-			if ( _occupied.playerNum === data.playerNum ) {
+		if ( occupied ) {
+			if ( occupied.playerNum === data.playerNum ) {
 				next( new IllegalMoveException( "You cannot capture your own piece" ) );
 			} else {
-				_occupied.piece.reset();
+				occupied.piece.reset();
 			}
 		}
 
@@ -427,7 +436,7 @@ export class Check4 {
 		this.state.turnCount++;
 
 		// If a piece is moved from the gutter, it skips straight to this
-		// middleware, in such case next() won't be defined
+		// middleware, in such a case, next won't be defined
 		if ( next ) next();
 		else this._checkForWin( data );
 	}
@@ -440,9 +449,9 @@ export class Check4 {
 		// If any piece is in the gutter, the player hasn't won
 		if (
 			this._inGutter( data.player.pawn ) ||
-      this._inGutter( data.player.rook ) ||
-      this._inGutter( data.player.bishop ) ||
-      this._inGutter( data.player.knight )
+			this._inGutter( data.player.rook ) ||
+			this._inGutter( data.player.bishop ) ||
+			this._inGutter( data.player.knight )
 		) {
 			return;
 		}
@@ -454,16 +463,16 @@ export class Check4 {
 		// Horizontal win
 		if (
 			data.player.bishop.x() === x &&
-      data.player.knight.x() === x &&
-      data.player.rook.x() === x
+			data.player.knight.x() === x &&
+			data.player.rook.x() === x
 		)
 			return this._declareWinner( data );
 
 		// Veritcal win
 		if (
 			data.player.bishop.y() === y &&
-      data.player.knight.y() === y &&
-      data.player.rook.y() === y
+			data.player.knight.y() === y &&
+			data.player.rook.y() === y
 		)
 			return this._declareWinner( data );
 
@@ -486,5 +495,5 @@ export class Check4 {
 }
 
 export default {
-	Check4
+	"Check4": Check4
 };

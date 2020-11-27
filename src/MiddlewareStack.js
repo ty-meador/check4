@@ -1,6 +1,10 @@
 "use strict";
 
-export default class MiddlewareStack {
+/*
+	Middleware Stack derived from expressjs
+ */
+
+export class MiddlewareStack {
 	constructor() {
 		this.stack = [];
 	}
@@ -63,4 +67,4 @@ class Layer {
 		}
 	}
 }
-export { MiddlewareStack };
+export default { "MiddlewareStack": MiddlewareStack };

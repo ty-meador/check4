@@ -1,6 +1,9 @@
 "use strict";
 
-/** A base class from which all other pieces are derived */
+/**
+ * A base class from which all other pieces are derived
+ * @unrestricted
+ */
 export class Piece {
 	constructor( props = {}) {
 		if ( props.x && props.x !== null ) props.x = parseInt( props.x );
@@ -39,14 +42,14 @@ export class Piece {
 	 * Sets the coordinates the the piece will be moved to when .reset() is called
 	 * @param {number} x - The x coordinate
 	 * @param {number} y - The y coordinate
-	 * @throws Error - Throws an error if either coordinate is not a parseable int
+	 * @throws TypeError - Throws an error if either coordinate is not a parseable int
 	 */
 	setResetCoords( x, y ) {
 		if ( x !== null ) x = parseInt( x );
 		if ( y !== null ) y = parseInt( y );
 
 		if ( Number.isNaN( x ) || Number.isNaN( y ) )
-			throw new Error( "Coordinates must be integers or null" );
+			throw new TypeError( "Coordinates must be integers or null" );
 
 		this.initCoords = [x, y];
 	}
@@ -78,7 +81,8 @@ export class Piece {
 
 /**
  * Represents a single Pawn piece
- * @extends Piece
+ * @unrestricted
+ * @extends {Piece}
  */
 export class Pawn extends Piece {
 	constructor( props = {}) {
@@ -121,6 +125,7 @@ export class Pawn extends Piece {
 	 * @param {boolean} [isAttack=false] - Whether or not this move is an attempt
 	 * to capture an opponents piece
 	 * @returns {boolean} - True if the move is legal, false if not
+	 * @override
 	 */
 	canMove( x, y, isAttack = false ) {
 		x = parseInt( x );
@@ -160,11 +165,13 @@ export class Pawn extends Piece {
 	}
 
 	/**
-	 * Checks if the pawn is trying to move 1 square in a diagnoal direction
+	 * Checks if the pawn is trying to move 1 tile in a diagnoal direction.
+	 * NOTE: If the move is diagonal but is more than 1 tile, function returns
+	 * false
 	 * @private
 	 * @param {number} x - The x coordinate
 	 * @param {number} y - The y coordinate
-	 * @returns {boolean} - Only returns true if the move is exactly 1 square diagnoally
+	 * @returns {boolean} - Only returns true if the move is exactly 1 tile diagnoally
 	 */
 	_moveIsDiagnoal( x, y ) {
 		let diffX = Math.abs( x - this.x() );
@@ -175,7 +182,8 @@ export class Pawn extends Piece {
 
 /**
  * Represents a single Rook piece
- * @extends Piece
+ * @unrestricted
+ * @extends {Piece}
  */
 export class Rook extends Piece {
 	constructor( props = {}) {
@@ -189,6 +197,7 @@ export class Rook extends Piece {
 	 * @param {number} x - The x coordinate to move to
 	 * @param {number} y - The y coordinate to move to
 	 * @returns {boolean} - True if the move is legal, false if not
+	 * @override
 	 */
 	canMove( x, y ) {
 		x = parseInt( x );
@@ -206,7 +215,8 @@ export class Rook extends Piece {
 
 /**
  * Represents a single Knight piece
- * @extends Piece
+ * @unrestricted
+ * @extends {Piece}
  */
 export class Knight extends Piece {
 	constructor( props = {}) {
@@ -220,6 +230,7 @@ export class Knight extends Piece {
 	 * @param {number} x - The x coordinate to move to
 	 * @param {number} y - The y coordinate to move to
 	 * @returns {boolean} - True if the move is legal, false if not
+	 * @override
 	 */
 	canMove( x, y ) {
 		x = parseInt( x );
@@ -238,7 +249,8 @@ export class Knight extends Piece {
 
 /**
  * Represents a single Bishop piece
- * @extends Piece
+ * @unrestricted
+ * @extends {Piece}
  */
 export class Bishop extends Piece {
 	constructor( props = {}) {
@@ -252,13 +264,14 @@ export class Bishop extends Piece {
 	 * @param {number} x - The x coordinate to move to
 	 * @param {number} y - The y coordinate to move to
 	 * @returns {boolean} - True if the move is legal, false if not
+	 * @override
 	 */
 	canMove( x, y ) {
 		x = parseInt( x );
 		y = parseInt( y );
 		if ( Number.isNaN( x ) || Number.isNaN( y ) ) return false;
 		/**
-		 * A Bishiops move is valid if the absolute value of the difference in x's is
+		 * A Bishops move is valid if the absolute value of the difference in x's is
 		 * equal to the absolute value of the difference in y's
 		 */
 		return Math.abs( x - this.x() ) === Math.abs( y - this.y() );
@@ -266,9 +279,9 @@ export class Bishop extends Piece {
 }
 
 export default {
-	Piece,
-	Pawn,
-	Rook,
-	Knight,
-	Bishop
+	"Piece": Piece,
+	"Pawn": Pawn,
+	"Rook": Rook,
+	"Knight": Knight,
+	"Bishop": Bishop
 };

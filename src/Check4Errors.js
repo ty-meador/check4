@@ -49,8 +49,8 @@ export class GameOverException extends GameException {
 }
 
 export default {
-	IllegalMoveException,
-	PlayerTurnException,
-	GameException,
-	GameOverException
+	"IllegalMoveException": IllegalMoveException,
+	"PlayerTurnException": PlayerTurnException,
+	"GameException": GameException,
+	"GameOverException":GameOverException
 };
