@@ -8,7 +8,7 @@
     "test": "tests"
   },
   "scripts": {
-    "build": "webpack --mode production --display-modules",
+    "build": "webpack --mode production",
 	"test": "jest",
     "coverage": "jest --coverage",
     "coveralls": "jest --coverage && cat ./coverage/lcov.info | coveralls"
