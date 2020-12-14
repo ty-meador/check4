@@ -549,9 +549,9 @@
 <a name='L490'></a><a href='#L490'>490</a>
 <a name='L491'></a><a href='#L491'>491</a>
 <a name='L492'></a><a href='#L492'>492</a>
-<a name='L493'></a><a href='#L493'>493</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L493'></a><a href='#L493'>493</a>
+<a name='L494'></a><a href='#L494'>494</a>
+<a name='L495'></a><a href='#L495'>495</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -569,6 +569,7 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">42x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">42x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -777,6 +778,13 @@
 <span class="cline-any cline-yes">393x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">387x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1037,12 +1045,7 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { MiddlewareStack } from "./MiddlewareStack.js";
-&nbsp;
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { MiddlewareStack } from "meador-middleware";
 import { Pawn, Rook, Knight, Bishop, Piece } from "./Pieces.js";
 &nbsp;
 import {
@@ -1052,16 +1055,16 @@ import {
 } from "./Check4Errors.js";
 &nbsp;
 /**
- * @class
- * Represents a single instance of a Check4 game
+ * Represents a single instance of a Check4 game in progress
  */
-export class Check4 {
+export default class Check4 {
 	constructor( props = {}) {
 		if ( !props.p1 || !props.p2 )
 			throw new Error( "You can't create a game without players!" );
 &nbsp;
 		this._onWin = props._onWin || ( <span class="fstat-no" title="function not covered" >()</span> =&gt; {});
 &nbsp;
+		// Initial game state
 		this.state = {
 			turn: 1,
 			turnCount: 0,
@@ -1271,7 +1274,14 @@ export class Check4 {
 		return piece.x() === null &amp;&amp; piece.y() === null;
 	}
 &nbsp;
-	/*********************** Rule Middleware **********************************/
+	/*********************** Rule Middleware Stack****************************
+	 * Purpose:	Each function represents a single "rule" in the game         *
+	 *                                                                       *
+	 * NOTES:	Each rule is in the order that it is executed in the         *
+	 *    Middleware Stack. Anytime next() is called, the game moves on to   *
+	 *    the next function. Each function represents a single atomic "rule" *
+	 *    of the game                                                        *
+	 *************************************************************************/
 &nbsp;
 	/**
    * Ensures that the data dispatched to the middleware is in a consistent format
@@ -1472,7 +1482,7 @@ export class Check4 {
 		this.state.turnCount++;
 &nbsp;
 		// If a piece is moved from the gutter, it skips straight to this
-		// middleware, in such case next() won't be defined
+		// middleware, in such a case, next won't be defined
 		if ( next ) next();
 		else this._checkForWin( data );
 	}
@@ -1485,9 +1495,9 @@ export class Check4 {
 		// If any piece is in the gutter, the player hasn't won
 		if (
 			this._inGutter( data.player.pawn ) ||
-      this._inGutter( data.player.rook ) ||
-      this._inGutter( data.player.bishop ) ||
-      this._inGutter( data.player.knight )
+			this._inGutter( data.player.rook ) ||
+			this._inGutter( data.player.bishop ) ||
+			this._inGutter( data.player.knight )
 		) {
 			return;
 		}
@@ -1499,16 +1509,16 @@ export class Check4 {
 		// Horizontal win
 		if (
 			data.player.bishop.x() === x &amp;&amp;
-      data.player.knight.x() === x &amp;&amp;
-      data.player.rook.x() === x
+			data.player.knight.x() === x &amp;&amp;
+			data.player.rook.x() === x
 		)
 			return this._declareWinner( data );
 &nbsp;
 		// Veritcal win
 		if (
 			data.player.bishop.y() === y &amp;&amp;
-      data.player.knight.y() === y &amp;&amp;
-      data.player.rook.y() === y
+			data.player.knight.y() === y &amp;&amp;
+			data.player.rook.y() === y
 		)
 			return this._declareWinner( data );
 &nbsp;
@@ -1529,10 +1539,6 @@ export class Check4 {
 		return this._declareWinner( data );
 	}
 }
-&nbsp;
-export default {
-	Check4
-};
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -1540,7 +1546,7 @@ export default {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank">istanbul</a>
-                at Fri Nov 20 2020 19:23:37 GMT-0600 (Central Standard Time)
+                at Mon Dec 14 2020 11:45:03 GMT-0600 (Central Standard Time)
             </div>
         </div>
         <script src="prettify.js"></script>

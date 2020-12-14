@@ -1,0 +1,41 @@
+version: "2"
+plugins:
+  csslint:
+    enabled: true
+  coffeelint:
+    enabled: true
+  duplication:
+    enabled: true
+    config:
+      languages:
+        - javascript
+        - jsx
+  eslint:
+    enabled: true
+    channel: __ESLINT_CHANNEL__
+  fixme:
+    enabled: true
+  rubocop:
+    enabled: true
+exclude_patterns:
+  - config/
+  - db/
+  - features/
+  - "**/node_modules/"
+  - script/
+  - "**/spec/"
+  - "**/test/"
+  - "**/tests/"
+  - Tests/
+  - "**/vendor/"
+  - "**/*_test.go"
+  - "**/*.d.ts"
+  - "**/*.min.js"
+  - "**/*.min.css"
+  - "**/__tests__/"
+  - "**/__mocks__/"
+  - coverage/
+  - examples/
+  - tests/
+  - build/
+  - dist/

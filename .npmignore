@@ -1,0 +1,13 @@
+.yo-rc.json
+babel.config.js
+webpack.config.js
+.gitlab-ci.yml
+.gitignore
+.eslint
+.coveralls.yml
+.codeclimate.yml
+.babelrc
+tests/
+src/
+node_modules/
+coverage/

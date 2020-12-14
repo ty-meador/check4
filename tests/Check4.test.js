@@ -1,8 +1,6 @@
 "use strict";
 
-import {
-	Check4
-} from "../src/Check4.js";
+import Check4 from "../src/Check4.js";
 
 import {
 	Pawn,

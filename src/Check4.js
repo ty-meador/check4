@@ -1,5 +1,4 @@
-import { MiddlewareStack } from "./MiddlewareStack.js";
-
+import { MiddlewareStack } from "meador-middleware";
 import { Pawn, Rook, Knight, Bishop, Piece } from "./Pieces.js";
 
 import {
@@ -11,7 +10,7 @@ import {
 /**
  * Represents a single instance of a Check4 game in progress
  */
-class Check4 {
+export default class Check4 {
 	constructor( props = {}) {
 		if ( !props.p1 || !props.p2 )
 			throw new Error( "You can't create a game without players!" );
@@ -493,7 +492,3 @@ class Check4 {
 		return this._declareWinner( data );
 	}
 }
-
-export default {
-	"Check4": Check4
-};
