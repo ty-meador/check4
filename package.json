@@ -8,7 +8,7 @@
     "test": "tests"
   },
   "scripts": {
-    "build": "webpack --mode production",
+    "build": "webpack",
     "test": "jest",
     "coverage": "jest --coverage",
     "coveralls": "jest --coverage && cat ./coverage/lcov.info | coveralls"
@@ -27,9 +27,6 @@
     "url": "https://gitlab.com/Native-Coder/check4/issues"
   },
   "homepage": "https://gitlab.com/Native-Coder/check4#readme",
-  "dependencies": {
-    "meador-middleware": "^1.0.1"
-  },
   "devDependencies": {
     "@babel/core": "^7.12.10",
     "@babel/plugin-transform-modules-commonjs": "^7.10.4",

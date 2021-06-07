@@ -1,4 +1,4 @@
-import { MiddlewareStack } from "meador-middleware";
+import { MiddlewareStack } from "./MiddlewareStack";
 import { Pawn, Rook, Knight, Bishop, Piece } from "./Pieces.js";
 
 import {
