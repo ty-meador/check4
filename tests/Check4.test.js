@@ -12,7 +12,8 @@ import {
 
 import {
 	PlayerTurnException,
-	IllegalMoveException
+	IllegalMoveException,
+	GameOverException
 } from "../src/Check4Errors.js";
 
 describe( "Check4 class", () => {
@@ -1484,6 +1485,85 @@ describe( "Pawn movement", () => {
 });
 
 describe( "Win scenarios", () => {
+
+	test( "forfet() declares a winner", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		let WINNER_DECLARED = false;
+		Game.onWin( () => {
+			WINNER_DECLARED = true;
+		});
+		Game.forfeit();
+
+		expect( WINNER_DECLARED ).toBe( true );
+
+	});
+
+	test( "forfeit() ends the game", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		Game.forfeit();
+
+		let err = null;
+		try {
+			Game.takeTurn({
+				player: 1,
+				piece: "pawn",
+				x: 0,
+				y: 0
+			});
+		} catch( e ){
+			err = e;
+		}
+
+		expect( err instanceof GameOverException ).toBe( true );
+	});
+
+	test( "forfeit() as p1 declares p2 as winner", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		let winner = null;
+		Game.onWin( ( gameState ) => {
+			winner = gameState.winner;
+		});
+
+		Game.forfeit();
+
+		expect( winner ).toBe( 2 );
+	});
+
+	test( "forfeit() as p2 declares p1 as winner", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		let winner = null;
+		Game.onWin( ( gameState ) => {
+			winner = gameState.winner;
+		});
+
+		Game.takeTurn({
+			player: 1,
+			piece: "pawn",
+			x: 0,
+			y: 0
+		});
+
+		Game.forfeit();
+
+		expect( winner ).toBe( 1 );
+	});
+
 	test( "horizontal win", () => {
 		const Game = new Check4({
 			p1:{ name: "p1" },

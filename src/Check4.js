@@ -129,6 +129,17 @@ export default class Check4 {
 	}
 
 	/**
+	 * Forfeits the game for whichever players turn it is.
+	 */
+	forfeit(){
+		if( this.state.turn == 1 )
+			this.state.winner = 2;
+		else
+			this.state.winner = 1;
+		this._declareWinner({ playerNum: this.state.winner });
+	}
+
+	/**
    * Returns the players state
    * @returns state - The state of the game
    */
