@@ -11,6 +11,7 @@ import {
 } from "../src/Pieces.js";
 
 import {
+	GameException,
 	PlayerTurnException,
 	IllegalMoveException,
 	GameOverException
@@ -336,7 +337,6 @@ describe( "Check4 class", () => {
 	});
 
 });
-
 
 describe( "Turn control", () => {
 	test( "Cant take turn if it is not your turn", () => {
@@ -1048,7 +1048,6 @@ describe( "Rook and Bishop cannot jump other pieces", () => {
 		expect( err instanceof IllegalMoveException ).toBe( true );
 	});
 });
-
 
 describe( "Pawn movement", () => {
 	test( "pawn can attack to the NW", () => {
@@ -1947,5 +1946,441 @@ describe( "middleware tests", () => {
 
 		expect( err instanceof TypeError  ).toBe( true );
 		expect( err.message ).toBe( "No piece specified" );
+	});
+});
+
+describe( "Check4.setState tests", () => {
+
+	test( "Turn changes with new state", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		Game.takeTurn({
+			player: 1,
+			piece: "pawn",
+			x: 0,
+			y: 0
+		});
+
+		let state = Game.getState();
+		expect( state.turn ).toBe( 2 );
+
+		Game.setState({
+			turn: 1,
+			turnCount: 1,
+			winner: null,
+			p1:{
+				p:{ x: 2, y: 2 }
+			}
+		});
+
+		state = Game.getState();
+		expect( state.turn ).toBe( 1 );
+	});
+
+	test( "turnCount changes with new state", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		Game.takeTurn({
+			player: 1,
+			piece: "pawn",
+			x: 0,
+			y: 0
+		});
+
+		let state = Game.getState();
+		expect( state.turnCount ).toBe( 1 );
+
+		Game.setState({
+			turn: 2,
+			turnCount: 5,
+			winner: null,
+			p1:{
+				p:{ x: 2, y: 2 }
+			}
+		});
+
+		state = Game.getState();
+		expect( state.turnCount ).toBe( 5 );
+	});
+
+	test( "winner changes with new state", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		Game.takeTurn({
+			player: 1,
+			piece: "pawn",
+			x: 0,
+			y: 0
+		});
+
+		let state = Game.getState();
+		expect( state.winner ).toBe( null );
+
+		Game.setState({
+			turn: 2,
+			turnCount: 1,
+			winner: 1,
+			p1:{
+				p:{ x: 2, y: 2 }
+			}
+		});
+
+		state = Game.getState();
+		expect( state.winner ).toBe( 1 );
+	});
+
+	test( "Changing turn does not affect turnCount or winner", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		Game.takeTurn({
+			player: 1,
+			piece: "pawn",
+			x: 0,
+			y: 0
+		});
+
+		let state = Game.getState();
+		expect( state.turn ).toBe( 2 );
+		expect( state.turnCount ).toBe( 1 );
+		expect( state.winner ).toBe( null );
+
+		Game.setState({
+			turn: 1,
+			turnCount: 1,
+			winner: null,
+			p1:{
+				p:{ x: 2, y: 2 }
+			}
+		});
+
+		state = Game.getState();
+		expect( state.turn ).toBe( 1 );
+		expect( state.turnCount ).toBe( 1 );
+		expect( state.winner ).toBe( null );
+	});
+
+	test( "Changing turnCount does not affect turn or winner", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		Game.takeTurn({
+			player: 1,
+			piece: "pawn",
+			x: 0,
+			y: 0
+		});
+
+		let state = Game.getState();
+		expect( state.turn ).toBe( 2 );
+		expect( state.turnCount ).toBe( 1 );
+		expect( state.winner ).toBe( null );
+
+		Game.setState({
+			turn: 2,
+			turnCount: 5,
+			winner: null
+		});
+
+		state = Game.getState();
+		expect( state.turn ).toBe( 2 );
+		expect( state.turnCount ).toBe( 5 );
+		expect( state.winner ).toBe( null );
+	});
+
+	test( "Chaning winner does not affect turn or turnCount", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		Game.takeTurn({
+			player: 1,
+			piece: "pawn",
+			x: 0,
+			y: 0
+		});
+
+		let state = Game.getState();
+		expect( state.turn ).toBe( 2 );
+		expect( state.turnCount ).toBe( 1 );
+		expect( state.winner ).toBe( null );
+
+		Game.setState({
+			turn: 2,
+			turnCount: 1,
+			winner: 2
+		});
+
+		state = Game.getState();
+		expect( state.turn ).toBe( 2 );
+		expect( state.turnCount ).toBe( 1 );
+		expect( state.winner ).toBe( 2 );
+	});
+
+	test( "If turn is not 1 or 2 throw GameException", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		Game.takeTurn({
+			player: 1,
+			piece: "pawn",
+			x: 0,
+			y: 0
+		});
+
+		let TURN_3_DID_THROW = false;
+		let ERR_INSTANCE_OF_GAMEEXCEPTION = false;
+		try{
+			Game.setState({
+				turn: 3,
+				turnCount: 1,
+				winner: null
+			});
+		} catch( e ){
+			TURN_3_DID_THROW = true;
+			if( e instanceof GameException )
+				ERR_INSTANCE_OF_GAMEEXCEPTION = true;
+		}
+
+		expect( TURN_3_DID_THROW ).toBe( true );
+		expect( ERR_INSTANCE_OF_GAMEEXCEPTION ).toBe( true );
+	});
+
+	test( "If winner is not one of null, 1, or 2 throw GameException", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		Game.takeTurn({
+			player: 1,
+			piece: "pawn",
+			x: 0,
+			y: 0
+		});
+
+		let NULL_DID_NOT_THROW = true;
+		let TWO_DID_NOT_THROW = true;
+		let ONE_DID_NOT_THROW = true;
+		let THREE_DID_THROW = false;
+		try {
+			Game.setState({
+				turn: 1,
+				turnCount: 1,
+				winner: null
+			});
+		} catch( e ) {
+			NULL_DID_NOT_THROW = false;
+		}
+
+		try {
+			Game.setState({
+				turn: 1,
+				turnCount: 1,
+				winner: 1
+			});
+		} catch( e ) {
+			ONE_DID_NOT_THROW = false;
+		}
+
+		try {
+			Game.setState({
+				turn: 1,
+				turnCount: 1,
+				winner: 2
+			});
+		} catch( e ) {
+			TWO_DID_NOT_THROW = false;
+		}
+
+		try {
+			Game.setState({
+				turn: 1,
+				turnCount: 1,
+				winner: 3
+			});
+		} catch( e ) {
+			THREE_DID_THROW = true;
+		}
+
+		expect( NULL_DID_NOT_THROW ).toBe( true );
+		expect( ONE_DID_NOT_THROW ).toBe( true );
+		expect( TWO_DID_NOT_THROW ).toBe( true );
+		expect( THREE_DID_THROW ).toBe( true );
+	});
+
+	test( "Trying to update state with a negative turn count throws GameException", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		Game.takeTurn({
+			player: 1,
+			piece: "pawn",
+			x: 0,
+			y: 0
+		});
+
+		let DID_THROW = false;
+		let ERR_INSTANCE_OF_GAMEEXCEPTION = false;
+		try{
+			Game.setState({
+				turn: 1,
+				turnCount: -1,
+				winner: null
+			});
+		} catch( e ){
+			DID_THROW = true;
+			if( e instanceof GameException )
+				ERR_INSTANCE_OF_GAMEEXCEPTION = true;
+		}
+
+		expect( DID_THROW ).toBe( true );
+		expect( ERR_INSTANCE_OF_GAMEEXCEPTION ).toBe( true );
+	});
+
+	test( "Trying to update state with a non-number turn count throw GameException", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		Game.takeTurn({
+			player: 1,
+			piece: "pawn",
+			x: 0,
+			y: 0
+		});
+
+		let A_DID_THROW = false;
+		let NULL_DID_THROW = false;
+		let ERR_INSTANCE_OF_GAMEEXCEPTION = false;
+
+		try{
+			Game.setState({
+				turn: 2,
+				turnCount: "a",
+				winner: null
+			});
+		} catch( e ){
+			A_DID_THROW = true;
+			if( e instanceof GameException )
+				ERR_INSTANCE_OF_GAMEEXCEPTION = true;
+		}
+
+		try{
+			Game.setState({
+				turn: 2,
+				turnCount: null,
+				winner: null
+			});
+		} catch ( e ){
+			NULL_DID_THROW = true;
+		}
+
+		expect( NULL_DID_THROW ).toBe( true );
+		expect( A_DID_THROW ).toBe( true );
+		expect( ERR_INSTANCE_OF_GAMEEXCEPTION ).toBe( true );
+	});
+
+	test( "Using a malformed state throws GameException", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		Game.takeTurn({
+			player: 1,
+			piece: "pawn",
+			x: 0,
+			y: 0
+		});
+
+		let DID_THROW = false;
+		let ERR_INSTANCE_OF_GAMEEXCEPTION = false;
+
+		try{
+			Game.setState({
+				turn: 0
+			});
+		} catch( e ){
+			DID_THROW = true;
+			if( e instanceof GameException )
+				ERR_INSTANCE_OF_GAMEEXCEPTION = true;
+		}
+
+		expect( DID_THROW ).toBe( true );
+		expect( ERR_INSTANCE_OF_GAMEEXCEPTION ).toBe( true );
+	});
+
+	test( "If new state declares winner, Game._declareWinner should be called", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		let _declareWinner_WAS_CALLED = false;
+		Game.onWin( () => {
+			_declareWinner_WAS_CALLED = true;
+		});
+
+		Game.takeTurn({
+			player: 1,
+			piece: "pawn",
+			x: 0,
+			y: 0
+		});
+
+		Game.setState({
+			turn: 2,
+			turnCount: 1,
+			winner: 1
+		});
+
+		expect( _declareWinner_WAS_CALLED ).toBe( true );
+	});
+
+	test( "P1 pawn is updated with new state", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		Game.takeTurn({
+			player: 1,
+			piece: "pawn",
+			x: 0,
+			y: 0
+		});
+
+		Game.setState({
+			turn: 2,
+			turnCount: 1,
+			winner: null,
+			p1:{
+				p:{ x: 2, y: 2 }
+			}
+		});
+
+		let pawn = Game.getState().p1.p;
+		expect( pawn.x ).toBe( 2 );
+		expect( pawn.y ).toBe( 2 );
 	});
 });

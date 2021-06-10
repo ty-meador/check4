@@ -2,6 +2,7 @@ import { MiddlewareStack } from "./MiddlewareStack";
 import { Pawn, Rook, Knight, Bishop, Piece } from "./Pieces.js";
 
 import {
+	GameException,
 	IllegalMoveException,
 	PlayerTurnException,
 	GameOverException
@@ -149,6 +150,52 @@ export default class Check4 {
 		}
 
 		this._declareWinner({ playerNum: winner });
+	}
+
+
+	/**
+	 * Manually updates the game state irrespectful of the game rule stack.
+	 * @param {GameState} state - The new game state to use
+	 */
+	setState( state ){
+		if( state.turn !== 1 && state.turn !== 2 )
+			throw new GameException( "GameState.turn must be 1 or 2" );
+		if( typeof state.turnCount !== "number" || state.turnCount < 0 )
+			throw new GameException( "GameState.turnCount must be a positive number" );
+		if( state.winner !== null && state.winner !== 1 && state.winner !== 2 )
+			throw new GameException( "GameState.winner must be one of null, 1, or 2" );
+
+		try{
+			if( state.p1 ){
+				if( state.p1.p )
+					this.state.p1.pawn.move( state.p1.p.x, state.p1.p.y );
+				if( state.p1.r )
+					this.state.p1.rook.move( state.p1.r.x, state.p1.r.y );
+				if( state.p1.k )
+					this.state.p1.knight.move( state.p1.k.x, state.p1.k.y );
+				if( state.p1.b )
+					this.state.p1.bishop.move( state.p1.b.x, state.p1.b.y );
+			}
+
+			if( state.p2 ){
+				if( state.p2.p )
+					this.state.p2.pawn.move( state.p2.p.x, state.p2.p.y );
+				if( state.p2.r )
+					this.state.p2.rook.move( state.p2.r.x, state.p2.r.y );
+				if( state.p2.k )
+					this.state.p2.knight.move( state.p2.k.x, state.p2.k.y );
+				if( state.p2.b )
+					this.state.p2.bishop.move( state.p2.b.x, state.p2.b.y );
+			}
+
+			this.state.turn = state.turn;
+			this.state.turnCount = state.turnCount;
+
+			if( state.winner !== null )
+				this._declareWinner({ playerNum: state.winner });
+		} catch ( e ){
+			throw new GameException( "Malformed state" );
+		}
 	}
 
 	/**
