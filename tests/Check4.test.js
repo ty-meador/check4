@@ -1564,6 +1564,38 @@ describe( "Win scenarios", () => {
 		expect( winner ).toBe( 1 );
 	});
 
+	test( "forfeit(1) declares p2 as winner", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		let winner = null;
+		Game.onWin( ( gameState ) => {
+			winner = gameState.winner;
+		});
+
+		Game.forfeit( 1 );
+
+		expect( winner ).toBe( 2 );
+	});
+
+	test( "forfeit(2) declares p1 as winner", () => {
+		const Game = new Check4({
+			p1: { name: "p1" },
+			p2: { name: "p2" }
+		});
+
+		let winner = null;
+		Game.onWin( ( gameState ) => {
+			winner = gameState.winner;
+		});
+
+		Game.forfeit( 2 );
+
+		expect( winner ).toBe( 1 );
+	});
+
 	test( "horizontal win", () => {
 		const Game = new Check4({
 			p1:{ name: "p1" },

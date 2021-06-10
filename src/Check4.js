@@ -129,14 +129,26 @@ export default class Check4 {
 	}
 
 	/**
-	 * Forfeits the game for whichever players turn it is.
+	 * Forfeits the game for whichever player is passed to the function. If
+	 * no player is passed to the function, the player whose turn it is Forfeits
+	 * @param {number} playerNum - The player who wishes to forfeit the match
 	 */
-	forfeit(){
-		if( this.state.turn == 1 )
-			this.state.winner = 2;
-		else
-			this.state.winner = 1;
-		this._declareWinner({ playerNum: this.state.winner });
+	forfeit( playerNum = null ){
+		let winner = null;
+
+		if( playerNum === 1 )
+			winner = 2;
+		else if ( playerNum === 2 )
+			winner = 1;
+		else{
+			// Default to the current players turn to forfeit
+			if( this.state.turn == 1 )
+				winner = 2;
+			else
+				winner = 1;
+		}
+
+		this._declareWinner({ playerNum: winner });
 	}
 
 	/**
