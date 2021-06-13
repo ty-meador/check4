@@ -317,8 +317,10 @@ export default class Check4 {
    * @throws IllegalMoveException - Throws if data.x or data.y are not parseable ints
    */
 	_normalizeData( data, next ) {
+		let knownPieces = [ "pawn", "rook", "bishop", "knight" ];
 		if ( !data.player ) throw new TypeError( "No player specified" );
 		if ( !data.piece ) throw new TypeError( "No piece specified" );
+		if( !knownPieces.includes( data.piece ) )throw new TypeError( `Unknown piece ${data.piece} specified` );
 		data.playerNum = parseInt( data.player );
 		data.player = data.playerNum === 1 ? this.state.p1 : this.state.p2;
 		data.piece = data.player[data.piece.toLowerCase()];

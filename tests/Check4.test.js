@@ -1843,6 +1843,30 @@ describe( "internal method tests", () => {
 		}).not.toThrow();
 	});
 
+	test( "_normalizeData throws an error if an unkown piece is used", () => {
+		const Game = new Check4({
+			p1:{ name: "p1" },
+			p2:{ name: "p2" }
+		});
+
+		let DID_THROW = false;
+		let msg = null;
+		try {
+			expect( Game._normalizeData({
+				player: 1,
+				piece: "ABRAKADABRA",
+				x: 0,
+				y: 0
+			}, () => {}) );
+		} catch( e ){
+			DID_THROW = true;
+			msg = e.message;
+		}
+
+		expect( DID_THROW ).toBe( true );
+		expect( msg ).toBe( "Unknown piece ABRAKADABRA specified" );
+	});
+
 });
 
 describe( "middleware tests", () => {

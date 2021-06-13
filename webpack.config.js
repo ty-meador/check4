@@ -23,7 +23,7 @@ const webConfig = {
 		path: path.resolve( __dirname, "dist" ),
 		library: {
 			name: "Check4",
-			type: "window"
+			type: "umd"
 		}
 	}
 };
