@@ -21,7 +21,7 @@ export class MiddlewareStack {
 		next();
 
 		function next( err ) {
-			let layer = stack[idx++];
+			let layer = stack[ idx++ ];
 			if ( !layer ) return done( err, data );
 			if ( err ) layer.handleError( err, data, next );
 			else layer.handleNext( data, next );

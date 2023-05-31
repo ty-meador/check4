@@ -34,8 +34,8 @@ export class Piece {
 		if ( Number.isNaN( x ) || Number.isNaN( y ) )
 			throw new Error( "Coordinates must be integers or null" );
 
-		this.coords[0] = x;
-		this.coords[1] = y;
+		this.coords[ 0 ] = x;
+		this.coords[ 1 ] = y;
 	}
 
 	/**
@@ -59,7 +59,7 @@ export class Piece {
 	 * chagned with setResetCoords( x, y )
 	 */
 	reset() {
-		this.coords = this.initCoords;
+		this.coords = [...this.initCoords];
 	}
 
 	/**
@@ -67,7 +67,7 @@ export class Piece {
 	 * @returns {number} The pieces current x coordinate
 	 */
 	x() {
-		return this.coords[0];
+		return this.coords[ 0 ];
 	}
 
 	/**
@@ -75,7 +75,7 @@ export class Piece {
 	 * @returns {number} The pieces current y coordinate
 	 */
 	y() {
-		return this.coords[1];
+		return this.coords[ 1 ];
 	}
 }
 
