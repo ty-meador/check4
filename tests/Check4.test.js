@@ -17,6 +17,13 @@ import {
 	GameOverException
 } from "../src/Check4Errors.js";
 
+const INITIAL_PLAYER_STATE = {
+	pawn: { x: null, y: null },
+	rook: { x: null, y: null },
+	bishop: { x: null, y: null },
+	knight: { x: null, y: null }
+};
+
 describe( "Check4 class", () => {
 	test( "creating game without players throws an error", () => {
 		try {
@@ -204,7 +211,7 @@ describe( "Check4 class", () => {
 		expect( S.turn ).toBe( 1 );
 		expect( S.turnCount ).toBe( 0 );
 		expect( S.winner ).toBe( null );
-		expect( typeof S.p1 ).toBe( "undefined" );
+		expect( JSON.stringify( S.p1 ) ).toBe( JSON.stringify( INITIAL_PLAYER_STATE ) );
 
 		Game.takeTurn({
 			player: 1,
@@ -217,7 +224,11 @@ describe( "Check4 class", () => {
 		expect( S.turn ).toBe( 2 );
 		expect( S.turnCount ).toBe( 1 );
 		expect( S.winner ).toBe( null );
-		expect( JSON.stringify( S.p1 ) ).toBe( JSON.stringify({ p: {x:0, y:0 } }) );
+		let expectedState = {
+			...INITIAL_PLAYER_STATE,
+			pawn:{x: 0, y: 0}
+		};
+		expect( JSON.stringify( S.p1 ) ).toBe( JSON.stringify( expectedState ) );
 
 		Game.takeTurn({
 			player: 2,
@@ -230,7 +241,11 @@ describe( "Check4 class", () => {
 		expect( S.turn ).toBe( 1 );
 		expect( S.turnCount ).toBe( 2 );
 		expect( S.winner ).toBe( null );
-		expect( JSON.stringify( S.p2 ) ).toBe( JSON.stringify({ r: {x:1, y:1 } }) );
+		expectedState = {
+			...INITIAL_PLAYER_STATE,
+			rook: {x: 1, y: 1}
+		};
+		expect( JSON.stringify( S.p2 ) ).toBe( JSON.stringify( expectedState ) );
 
 		Game.takeTurn({
 			player: 1,
@@ -243,10 +258,12 @@ describe( "Check4 class", () => {
 		expect( S.turn ).toBe( 2 );
 		expect( S.turnCount ).toBe( 3 );
 		expect( S.winner ).toBe( null );
-		expect( JSON.stringify( S.p1 ) ).toBe( JSON.stringify({
-			p: { x:0, y:0 },
-			b: { x:2, y:2 }
-		}) );
+		expectedState = {
+			...INITIAL_PLAYER_STATE,
+			pawn:{x:0,y:0},
+			bishop:{x:2,y:2}
+		};
+		expect( JSON.stringify( S.p1 ) ).toBe( JSON.stringify( expectedState ) );
 
 		Game.takeTurn({
 			player: 2,
@@ -259,10 +276,12 @@ describe( "Check4 class", () => {
 		expect( S.turn ).toBe( 1 );
 		expect( S.turnCount ).toBe( 4 );
 		expect( S.winner ).toBe( null );
-		expect( JSON.stringify( S.p2 ) ).toBe( JSON.stringify({
-			r: { x:1, y:1 },
-			k: { x:3, y:3 }
-		}) );
+		expectedState = {
+			...INITIAL_PLAYER_STATE,
+			rook:{x:1,y:1},
+			knight:{x:3,y:3}
+		};
+		expect( JSON.stringify( S.p2 ) ).toBe( JSON.stringify( expectedState ) );
 
 		Game.takeTurn({
 			player: 1,
@@ -275,11 +294,13 @@ describe( "Check4 class", () => {
 		expect( S.turn ).toBe( 2 );
 		expect( S.turnCount ).toBe( 5 );
 		expect( S.winner ).toBe( null );
-		expect( JSON.stringify( S.p1 ) ).toBe( JSON.stringify({
-			p: { x:0, y:0 },
-			r: { x:3, y:2 },
-			b: { x:2, y:2 }
-		}) );
+		expectedState = {
+			...INITIAL_PLAYER_STATE,
+			pawn: { x: 0, y: 0 },
+			rook: { x: 3, y: 2 },
+			bishop: { x: 2, y: 2 }
+		};
+		expect( JSON.stringify( S.p1 ) ).toBe( JSON.stringify( expectedState ) );
 
 		Game.takeTurn({
 			player: 2,
@@ -292,11 +313,13 @@ describe( "Check4 class", () => {
 		expect( S.turn ).toBe( 1 );
 		expect( S.turnCount ).toBe( 6 );
 		expect( S.winner ).toBe( null );
-		expect( JSON.stringify( S.p2 ) ).toBe( JSON.stringify({
-			p: { x:1, y:3 },
-			r: { x:1, y:1 },
-			k: { x:3, y:3 }
-		}) );
+		expectedState = {
+			...INITIAL_PLAYER_STATE,
+			pawn: { x: 1, y: 3 },
+			rook: { x: 1, y: 1 },
+			knight: { x: 3, y: 3 }
+		};
+		expect( JSON.stringify( S.p2 ) ).toBe( JSON.stringify( expectedState ) );
 
 		Game.takeTurn({
 			player: 1,
@@ -309,12 +332,14 @@ describe( "Check4 class", () => {
 		expect( S.turn ).toBe( 2 );
 		expect( S.turnCount ).toBe( 7 );
 		expect( S.winner ).toBe( null );
-		expect( JSON.stringify( S.p1 ) ).toBe( JSON.stringify({
-			p: { x:0, y:0 },
-			r: { x:3, y:2 },
-			b: { x:2, y:2 },
-			k: { x:2, y:1 }
-		}) );
+		expectedState = {
+			...INITIAL_PLAYER_STATE,
+			pawn: { x: 0, y: 0 },
+			rook: { x: 3, y: 2 },
+			bishop: { x: 2, y: 2 },
+			knight: { x: 2, y: 1 }
+		};
+		expect( JSON.stringify( S.p1 ) ).toBe( JSON.stringify( expectedState ) );
 
 		Game.takeTurn({
 			player: 2,
@@ -327,12 +352,14 @@ describe( "Check4 class", () => {
 		expect( S.turn ).toBe( 1 );
 		expect( S.turnCount ).toBe( 8 );
 		expect( S.winner ).toBe( null );
-		expect( JSON.stringify( S.p2 ) ).toBe( JSON.stringify({
-			p: { x:1, y:3 },
-			r: { x:1, y:1 },
-			b: { x:1, y:2 },
-			k: { x:3, y:3 }
-		}) );
+		expectedState = {
+			...INITIAL_PLAYER_STATE,
+			pawn: { x: 1, y: 3 },
+			rook: { x: 1, y: 1 },
+			bishop: { x: 1, y: 2 },
+			knight: { x: 3, y: 3 }
+		};
+		expect( JSON.stringify( S.p2 ) ).toBe( JSON.stringify( expectedState ) );
 
 	});
 
@@ -1996,7 +2023,7 @@ describe( "Check4.setState tests", () => {
 			turnCount: 1,
 			winner: null,
 			p1:{
-				p:{ x: 2, y: 2 }
+				pawn:{ x: 2, y: 2 }
 			}
 		});
 
@@ -2025,7 +2052,7 @@ describe( "Check4.setState tests", () => {
 			turnCount: 5,
 			winner: null,
 			p1:{
-				p:{ x: 2, y: 2 }
+				pawn:{ x: 2, y: 2 }
 			}
 		});
 
@@ -2054,7 +2081,7 @@ describe( "Check4.setState tests", () => {
 			turnCount: 1,
 			winner: 1,
 			p1:{
-				p:{ x: 2, y: 2 }
+				pawn:{ x: 2, y: 2 }
 			}
 		});
 
@@ -2085,7 +2112,7 @@ describe( "Check4.setState tests", () => {
 			turnCount: 1,
 			winner: null,
 			p1:{
-				p:{ x: 2, y: 2 }
+				pawn:{ x: 2, y: 2 }
 			}
 		});
 
@@ -2399,12 +2426,88 @@ describe( "Check4.setState tests", () => {
 			turnCount: 1,
 			winner: null,
 			p1:{
-				p:{ x: 2, y: 2 }
+				pawn:{ x: 2, y: 2 }
 			}
 		});
 
-		let pawn = Game.getState().p1.p;
+		let pawn = Game.getState().p1.pawn;
 		expect( pawn.x ).toBe( 2 );
 		expect( pawn.y ).toBe( 2 );
 	});
+});
+
+describe( "moveIsValid tests", () => {
+	const Game = new Check4({
+		p1: { name: "p1" },
+		p2: { name: "p2" }
+	});
+
+	expect( Game.getState().turnCount ).toBe( 0 );
+
+	let moveIsValid = Game.moveIsValid({
+		player: 1,
+		piece: "knight",
+		x: 1,
+		y: 1
+	});
+
+	expect( moveIsValid ).toBe( true );
+	expect( Game.getState().turnCount ).toBe( 0 );
+
+	Game.takeTurn({
+		player: 1,
+		piece: "pawn",
+		x: 0,
+		y: 0
+	});
+
+	expect( Game.getState().turnCount ).toBe( 1 );
+
+	moveIsValid = Game.moveIsValid({
+		player: 1,
+		piece: "knight",
+		x: 1,
+		y: 1
+	});
+
+	expect( Game.getState().turnCount ).toBe( 1 );
+	expect( moveIsValid ).toBe( false );
+
+	moveIsValid = Game.moveIsValid({
+		player: 2,
+		piece: "knight",
+		x: 1,
+		y: 1
+	});
+
+	expect( Game.getState().turnCount ).toBe( 1 );
+	expect( moveIsValid ).toBe( true );
+
+	Game.takeTurn({
+		player: 2,
+		piece: "knight",
+		x: 1,
+		y: 1
+	});
+
+	moveIsValid = Game.moveIsValid({
+		player: 2,
+		piece: "knight",
+		x: 1,
+		y: 1
+	});
+
+	expect( Game.getState().turnCount ).toBe( 2 );
+	expect( moveIsValid ).toBe( false );
+
+	moveIsValid = Game.moveIsValid({
+		player: 1,
+		piece: "bishop",
+		x: 0,
+		y: 1
+	});
+
+	expect( Game.getState().turnCount ).toBe( 2 );
+	expect( moveIsValid ).toBe( true );
+
 });

@@ -6,19 +6,36 @@
   },
   "extends": "eslint:recommended",
   "parserOptions": {
-    "ecmaVersion": 6,
+    "ecmaVersion": 2018,
     "sourceType": "module"
   },
   "rules": {
-    "indent": ["error", "tab", { "SwitchCase": 1 }],
-    "linebreak-style": ["error", "unix"],
-    "quotes": ["error", "double"],
-    "semi": ["error", "always"],
+    "indent": [
+      "error",
+      "tab",
+      {
+        "SwitchCase": 1
+      }
+    ],
+    "linebreak-style": [
+      "error",
+      "unix"
+    ],
+    "quotes": [
+      "error",
+      "double"
+    ],
+    "semi": [
+      "error",
+      "always"
+    ],
     "space-in-parens": [
       "error",
       "always",
       {
-        "exceptions": ["{}"]
+        "exceptions": [
+          "{}"
+        ]
       }
     ]
   }

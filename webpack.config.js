@@ -1,10 +1,10 @@
 const path = require( "path" );
 
-const nodeConfig = {
+const expressJSConfig = {
 	mode: "production",
 	entry: "./src/Check4.js",
 	output: {
-		filename: "Check4.node.js",
+		filename: "Check4.express.js",
 		globalObject: "this",
 		path: path.resolve( __dirname, "dist" ),
 		library: {
@@ -28,4 +28,4 @@ const webConfig = {
 	}
 };
 
-module.exports = [ nodeConfig, webConfig ];
+module.exports = [ expressJSConfig, webConfig ];

@@ -1,6 +1,7 @@
 {
   "name": "check4",
-  "version": "1.1.0",
+  "version": "2.0.0",
+  "private": true,
   "type": "esm",
   "description": "the check4 game files",
   "main": "Check4.js",
