@@ -1,8 +1,9 @@
 "use strict";
+
 import {
 	Rook,
 	Piece
-} from "../src/Pieces.js";
+} from "../src/Pieces";
 
 test( "rook is subclass of Piece", () => {
 	const R = new Rook();
@@ -10,19 +11,10 @@ test( "rook is subclass of Piece", () => {
 });
 
 test( "Rook can move up any number of spaces", () => {
-	const from = {
-		x: 0,
-		y: 2
-	};
+	const from = { x: 0, y: 2 };
 	const to = {
-		near: {
-			x: 0,
-			y: 3
-		},
-		far: {
-			x: 0,
-			y: 9
-		}
+		near: { x: 0, y: 3 },
+		far: { x: 0, y: 9 }
 	};
 	const R = new Rook( from );
 
@@ -31,19 +23,10 @@ test( "Rook can move up any number of spaces", () => {
 });
 
 test( "Rook can move left any number of spaces", () => {
-	const from = {
-		x: 2,
-		y: 2
-	};
+	const from = { x: 2, y: 2 };
 	const to = {
-		near: {
-			x: 1,
-			y: 2
-		},
-		far: {
-			x: 0,
-			y: 2
-		}
+		near: { x: 1, y: 2 },
+		far: { x: 0, y: 2 }
 	};
 	const R = new Rook( from );
 
@@ -52,19 +35,10 @@ test( "Rook can move left any number of spaces", () => {
 });
 
 test( "Rook can move down any number of spaces", () => {
-	const from = {
-		x: 2,
-		y: 2
-	};
+	const from = { x: 2, y: 2 };
 	const to = {
-		near: {
-			x: 2,
-			y: 1
-		},
-		far: {
-			x: 2,
-			y: 0
-		}
+		near: { x: 2, y: 1 },
+		far: { x: 2, y: 0 }
 	};
 	const R = new Rook( from );
 
@@ -73,19 +47,10 @@ test( "Rook can move down any number of spaces", () => {
 });
 
 test( "Rook can move right any number of spaces", () => {
-	const from = {
-		x: 2,
-		y: 2
-	};
+	const from = { x: 2, y: 2 };
 	const to = {
-		near: {
-			x: 3,
-			y: 2
-		},
-		far: {
-			x: 6,
-			y: 2
-		}
+		near: { x: 3, y: 2 },
+		far: { x: 6, y: 2 }
 	};
 	const R = new Rook( from );
 
@@ -93,28 +58,13 @@ test( "Rook can move right any number of spaces", () => {
 	expect( R.canMove( to.far.x, to.far.y ) ).toBe( true );
 });
 
-test( "Rook cannot move diagnoally", () => {
-	const from = {
-		x: 2,
-		y: 1
-	};
+test( "Rook cannot move diagonally", () => {
+	const from = { x: 2, y: 1 };
 	const to = {
-		ne: {
-			x: 3,
-			y: 2
-		},
-		nw: {
-			x: 1,
-			y: 2
-		},
-		se: {
-			x: 3,
-			y: 0
-		},
-		sw: {
-			x: 1,
-			y: 0
-		}
+		ne: { x: 3, y: 2 },
+		nw: { x: 1, y: 2 },
+		se: { x: 3, y: 0 },
+		sw: { x: 1, y: 0 }
 	};
 	const R = new Rook( from );
 
@@ -125,23 +75,19 @@ test( "Rook cannot move diagnoally", () => {
 });
 
 test( "Rook cannot hop across the board", () => {
-	const from = {
-		x: 0,
-		y: 0
-	};
-	const to = {
-		x: 5,
-		y: 5
-	};
+	const from = { x: 0, y: 0 };
+	const to = { x: 5, y: 5 };
 	const R = new Rook( from );
 
+	// @ts-expect-error - testing runtime validation of invalid input (object instead of coords)
 	expect( R.canMove( to ) ).toBe( false );
 });
 
 test( "canMove returns false if a coordinate is NaN", () => {
 	const R = new Rook();
 
+	// @ts-expect-error - testing runtime validation of invalid input
 	expect( R.canMove( 0, "fooBar" ) ).toBe( false );
+	// @ts-expect-error - testing runtime validation of invalid input
 	expect( R.canMove( "fooBar", 0 ) ).toBe( false );
-
 });

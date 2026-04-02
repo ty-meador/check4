@@ -2,7 +2,19 @@ const path = require( "path" );
 
 const expressJSConfig = {
 	mode: "production",
-	entry: "./src/Check4.js",
+	entry: "./src/Check4.ts",
+	resolve: {
+		extensions: [".ts", ".js"]
+	},
+	module: {
+		rules: [
+			{
+				test: /\.ts$/,
+				use: "ts-loader",
+				exclude: /node_modules/
+			}
+		]
+	},
 	output: {
 		filename: "Check4.express.js",
 		globalObject: "this",
@@ -16,7 +28,19 @@ const expressJSConfig = {
 
 const webConfig = {
 	mode: "production",
-	entry: "/src/Check4.js",
+	entry: "./src/Check4.ts",
+	resolve: {
+		extensions: [".ts", ".js"]
+	},
+	module: {
+		rules: [
+			{
+				test: /\.ts$/,
+				use: "ts-loader",
+				exclude: /node_modules/
+			}
+		]
+	},
 	output: {
 		filename: "Check4.web.js",
 		globalObject: "this",

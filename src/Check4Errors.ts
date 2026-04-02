@@ -16,8 +16,10 @@ export class GameException extends Error {
  * @class
  * Represents a requested move that is not allowed
  */
-export class IllegalMoveException extends GameException {
-	constructor( msg = "ILLEGAL_MOVE", data = null ) {
+export class IllegalMoveException<T = unknown> extends GameException {
+	readonly data: T | null;
+
+	constructor( msg = "ILLEGAL_MOVE", data: T | null = null ) {
 		super( msg );
 		this.name = this.constructor.name;
 		this.data = data;
@@ -28,8 +30,10 @@ export class IllegalMoveException extends GameException {
  * @class
  * Represents a requested move made by the wrong player
  */
-export class PlayerTurnException extends GameException {
-	constructor( msg = "WRONG_TURN", data = null ) {
+export class PlayerTurnException<T = unknown> extends GameException {
+	readonly data: T | null;
+
+	constructor( msg = "WRONG_TURN", data: T | null = null ) {
 		super( msg );
 		this.name = this.constructor.name;
 		this.data = data;
@@ -40,8 +44,10 @@ export class PlayerTurnException extends GameException {
  * @class
  * Represents a game that is already over
  */
-export class GameOverException extends GameException {
-	constructor( msg = "GAME_OVER", data = null ) {
+export class GameOverException<T = unknown> extends GameException {
+	readonly data: T | null;
+
+	constructor( msg = "GAME_OVER", data: T | null = null ) {
 		super( msg );
 		this.name = this.constructor.name;
 		this.data = data;
@@ -52,5 +58,5 @@ export default {
 	"IllegalMoveException": IllegalMoveException,
 	"PlayerTurnException": PlayerTurnException,
 	"GameException": GameException,
-	"GameOverException":GameOverException
+	"GameOverException": GameOverException
 };
