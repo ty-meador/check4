@@ -3,12 +3,13 @@
   "version": "2.0.0",
   "private": true,
   "description": "the check4 game files",
-  "main": "dist/Check4.express.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "directories": {
     "test": "tests"
   },
   "scripts": {
-    "build": "webpack",
+    "build": "tsc",
     "test": "jest",
     "coverage": "jest --coverage",
     "coveralls": "jest --coverage && cat ./coverage/lcov.info | coveralls"
@@ -34,14 +35,11 @@
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
-    "@webpack-cli/init": "^1.0.3",
-    "eslint": "^6.8.0",
-    "nodemon": "^2.0.6",
-    "terser-webpack-plugin": "^5.0.3",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.0",
+    "nodemon": "^3.1.0",
     "ts-jest": "^29.1.0",
-    "ts-loader": "^9.4.0",
-    "typescript": "^5.0.0",
-    "webpack": "^5.38.1",
-    "webpack-cli": "^4.7.2"
+    "typescript": "^5.0.0"
   }
 }

@@ -28,9 +28,9 @@ describe( "Check4 class", () => {
 	test( "creating game without players throws an error", () => {
 		try {
 			const Game = new Check4();
-			(Game as Check4 & { x: number }).x = 0;
+			( Game as Check4 & { x: number }).x = 0;
 		} catch ( e ) {
-			expect( (e as Error).message ).toBe( "You can't create a game without players!" );
+			expect( ( e as Error ).message ).toBe( "You can't create a game without players!" );
 		}
 	});
 
@@ -891,21 +891,22 @@ describe( "internal method tests", () => {
 		}).toThrow();
 
 		expect( () => {
+			// @ts-expect-error - testing private method with valid Piece instance
 			Game._inGutter( new Piece() );
 		}).not.toThrow();
 	});
 
-	test( "_normalizeData throws an error if an unknown piece is used", () => {
+	test( "_normalize throws an error if an unknown piece is used", () => {
 		const Game = new Check4({ p1: { name: "p1" }, p2: { name: "p2" } });
 
 		let DID_THROW = false;
 		let msg: string | null = null;
 		try {
 			// @ts-expect-error - testing runtime validation with invalid piece name
-			Game._normalizeData({ player: 1, piece: "ABRAKADABRA", x: 0, y: 0 }, () => {});
+			Game._normalize({ player: 1, piece: "ABRAKADABRA", x: 0, y: 0 });
 		} catch ( e ) {
 			DID_THROW = true;
-			msg = (e as Error).message;
+			msg = ( e as Error ).message;
 		}
 
 		expect( DID_THROW ).toBe( true );
@@ -913,56 +914,54 @@ describe( "internal method tests", () => {
 	});
 });
 
-describe( "middleware tests", () => {
-	const next = jest.fn();
-
-	test( "_normalizeData throws if a coordinate is not a parseable number", () => {
+describe( "input validation tests", () => {
+	test( "_normalize throws if a coordinate is not a parseable number", () => {
 		const Game = new Check4({ p1: { name: "p1" }, p2: { name: "p2" } });
 		expect( () => {
 			// @ts-expect-error - testing runtime validation with incomplete input
-			Game._normalizeData({ player: 1, piece: "pawn", x: 0 }, next );
+			Game._normalize({ player: 1, piece: "pawn", x: 0 });
 		}).toThrow();
 
 		expect( () => {
 			// @ts-expect-error - testing runtime validation with incomplete input
-			Game._normalizeData({ player: 1, piece: "pawn", y: 0 }, next );
+			Game._normalize({ player: 1, piece: "pawn", y: 0 });
 		}).toThrow();
 
 		expect( () => {
 			// @ts-expect-error - testing runtime validation with incomplete input
-			Game._normalizeData({ player: 1, piece: "pawn" }, next );
+			Game._normalize({ player: 1, piece: "pawn" });
 		}).toThrow();
 
 		expect( () => {
 			// @ts-expect-error - testing runtime validation with invalid coordinate
-			Game._normalizeData({ player: 1, piece: "pawn", x: "a" }, next );
+			Game._normalize({ player: 1, piece: "pawn", x: "a", y: 0 });
 		}).toThrow();
 
 		expect( () => {
 			// @ts-expect-error - testing runtime validation with invalid coordinate
-			Game._normalizeData({ player: 1, piece: "pawn", y: "a" }, next );
+			Game._normalize({ player: 1, piece: "pawn", x: 0, y: "a" });
 		}).toThrow();
 	});
 
-	test( "_isGameOver throws if the game is over", () => {
+	test( "_assertGameActive throws if the game is over", () => {
 		const Game = new Check4({ p1: { name: "p1" }, p2: { name: "p2" } });
 
-		// @ts-expect-error - testing with null data (game not over, next is called)
-		expect( () => Game._isGameOver( null, next ) ).not.toThrow();
+		// @ts-expect-error - testing private method access
+		expect( () => Game._assertGameActive() ).not.toThrow();
 
 		Game.state.winner = 1;
 
-		// @ts-expect-error - testing no-arg call (game is over, throws before next)
-		expect( () => Game._isGameOver() ).toThrow();
+		// @ts-expect-error - testing private method access
+		expect( () => Game._assertGameActive() ).toThrow();
 	});
 
-	test( "_normalizeData throws if a player is not specified", () => {
+	test( "_normalize throws if a player is not specified", () => {
 		const Game = new Check4({ p1: { name: "p1" }, p2: { name: "p2" } });
 
 		let err: Error | null = null;
 		try {
 			// @ts-expect-error - testing runtime validation with missing player
-			Game._normalizeData({ piece: "pawn", x: 0, y: 0 }, next );
+			Game._normalize({ piece: "pawn", x: 0, y: 0 });
 		} catch ( e ) {
 			err = e as Error;
 		}
@@ -971,13 +970,13 @@ describe( "middleware tests", () => {
 		expect( err!.message ).toBe( "No player specified" );
 	});
 
-	test( "_normalizeData throws if no piece is specified", () => {
+	test( "_normalize throws if no piece is specified", () => {
 		const Game = new Check4({ p1: { name: "p1" }, p2: { name: "p2" } });
 
 		let err: Error | null = null;
 		try {
 			// @ts-expect-error - testing runtime validation with missing piece
-			Game._normalizeData({ player: 1, x: 0, y: 0 }, next );
+			Game._normalize({ player: 1, x: 0, y: 0 });
 		} catch ( e ) {
 			err = e as Error;
 		}

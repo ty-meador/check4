@@ -274,7 +274,7 @@ export class Bishop extends Piece {
 		if ( Number.isNaN( x ) || Number.isNaN( y ) ) return false;
 		/**
 		 * A Bishop's move is valid if the absolute value of the difference in x's is
-		 * equal to the absolute value of the difference in y's
+		 * equal to the absolute value of the difference in y's ie, a diagnoal move.
 		 */
 		return Math.abs( x - ( this.x() as number ) ) === Math.abs( y - ( this.y() as number ) );
 	}

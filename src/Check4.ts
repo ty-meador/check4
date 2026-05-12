@@ -1,6 +1,6 @@
-import { MiddlewareStack, NextFn } from "./MiddlewareStack";
-import { Pawn, Rook, Knight, Bishop, Piece } from "./Pieces";
+"use strict";
 
+import { Pawn, Rook, Knight, Bishop, Piece } from "./Pieces";
 import {
 	GameException,
 	IllegalMoveException,
@@ -34,645 +34,425 @@ export interface MoveInput {
 	y: number;
 }
 
-// Shape of move data as it flows through the middleware stack (post-normalization)
-export interface MoveData {
-	player: PlayerState;
+export interface SetStateInput {
+	turn: PlayerNum;
+	turnCount: number;
+	winner: PlayerNum | null;
+	p1?: Partial<Record<PieceName, { x: number | null; y: number | null }>>;
+	p2?: Partial<Record<PieceName, { x: number | null; y: number | null }>>;
+}
+
+interface Move {
 	playerNum: PlayerNum;
+	player: PlayerState;
 	piece: Piece;
 	x: number;
 	y: number;
 }
 
-export interface PieceCoords {
-	x: number | null;
-	y: number | null;
-}
-
-export interface PlayerStateInput {
-	pawn?: PieceCoords;
-	rook?: PieceCoords;
-	bishop?: PieceCoords;
-	knight?: PieceCoords;
-}
-
-export interface GameStateInput {
-	turn: PlayerNum;
-	turnCount: number;
-	winner: PlayerNum | null;
-	p1?: PlayerStateInput;
-	p2?: PlayerStateInput;
-}
-
-export interface PieceSnapshot {
-	x: number | null | undefined;
-	y: number | null | undefined;
-}
-
-export interface PlayerSnapshot {
-	pawn: PieceSnapshot;
-	rook: PieceSnapshot;
-	bishop: PieceSnapshot;
-	knight: PieceSnapshot;
-}
-
-export interface GameSnapshot {
-	turn: PlayerNum;
-	turnCount: number;
-	winner: PlayerNum | null;
-	p1: PlayerSnapshot;
-	p2: PlayerSnapshot;
-}
-
-interface Check4Props {
-	p1: { name?: string; pawn?: Pawn; rook?: Rook; bishop?: Bishop; knight?: Knight };
-	p2: { name?: string; pawn?: Pawn; rook?: Rook; bishop?: Bishop; knight?: Knight };
-	_onWin?: ( state: GameState ) => void;
-}
-
-interface OccupiedResult {
-	playerNum: PlayerNum;
-	piece: Piece;
+export interface Check4Props {
+	p1: Partial<PlayerState> & { name?: string };
+	p2: Partial<PlayerState> & { name?: string };
 }
 
 /**
- * Represents a single instance of a Check4 game in progress
+ * The Check4 game engine.
+ *
+ * A two-player 4x4 abstract strategy game. Each player controls 4 chess-flavored
+ * pieces (Pawn, Rook, Knight, Bishop) and wins by aligning all four pieces
+ * horizontally, vertically, or diagonally.
  */
 export default class Check4 {
-	state: GameState;
-	dryRun: boolean;
+	/** Live game state — piece objects, turn, winner. */
+	public state: GameState;
 
-	private _onWin: ( state: GameState ) => void;
-	private _ruleStack: MiddlewareStack<MoveData>;
-	private _validationStack: MiddlewareStack<MoveData>;
+	private _winCallback: ( state: GameState ) => void;
 
-	constructor( props: Check4Props = {} as Check4Props ) {
-		if ( !props.p1 || !props.p2 )
+	/**
+	 * Create a new Check4 game instance.
+	 * @param props - Player configurations. Both p1 and p2 are required.
+	 * @throws {Error} If either player is missing.
+	 */
+	constructor( props?: Check4Props ) {
+		if ( !props?.p1 || !props?.p2 ) {
 			throw new Error( "You can't create a game without players!" );
+		}
 
-		this._onWin = props._onWin || ( () => { });
-		this.dryRun = false;
+		this._winCallback = () => {};
 
-		// Initial game state
 		this.state = {
 			turn: 1,
 			turnCount: 0,
 			winner: null,
-			p1: {
-				name: props.p1.name || "",
-				pawn:
-					props.p1.pawn ||
-					new Pawn({
-						x: null,
-						y: null
-					}),
-				rook:
-					props.p1.rook ||
-					new Rook({
-						x: null,
-						y: null
-					}),
-				bishop:
-					props.p1.bishop ||
-					new Bishop({
-						x: null,
-						y: null
-					}),
-				knight:
-					props.p1.knight ||
-					new Knight({
-						x: null,
-						y: null
-					})
-			},
-			p2: {
-				name: props.p2.name || "",
-				pawn:
-					props.p2.pawn ||
-					new Pawn({
-						reversed: true,
-						x: null,
-						y: null
-					}),
-				rook:
-					props.p2.rook ||
-					new Rook({
-						x: null,
-						y: null
-					}),
-				bishop:
-					props.p2.bishop ||
-					new Bishop({
-						x: null,
-						y: null
-					}),
-				knight:
-					props.p2.knight ||
-					new Knight({
-						x: null,
-						y: null
-					})
-			}
+			p1: this._createPlayer( props.p1, false ),
+			p2: this._createPlayer( props.p2, true )
 		};
 
-		// All pieces should reset to (null, null).
-		// The coordinates (null, null) represent the gutter
-		const p1 = this.state.p1;
-		const p2 = this.state.p2;
-		p1.pawn.setResetCoords( null, null );
-		p1.rook.setResetCoords( null, null );
-		p1.bishop.setResetCoords( null, null );
-		p1.knight.setResetCoords( null, null );
-		p2.pawn.setResetCoords( null, null );
-		p2.rook.setResetCoords( null, null );
-		p2.bishop.setResetCoords( null, null );
-		p2.knight.setResetCoords( null, null );
-
-		// Bind correct context
-		this._normalizeData = this._normalizeData.bind( this );
-		this._isGameOver = this._isGameOver.bind( this );
-		this._isCorrectPlayersTurn = this._isCorrectPlayersTurn.bind( this );
-		this._isMovingFromGutter = this._isMovingFromGutter.bind( this );
-		this._canMove = this._canMove.bind( this );
-		this._isPieceJumping = this._isPieceJumping.bind( this );
-		this._commitMove = this._commitMove.bind( this );
-		this._orientPawn = this._orientPawn.bind( this );
-		this._endTurn = this._endTurn.bind( this );
-		this._checkForWin = this._checkForWin.bind( this );
-		this.moveIsValid = this.moveIsValid.bind( this );
-
-		// Set up game middleware
-		this._ruleStack = new MiddlewareStack<MoveData>();
-		this._ruleStack.use( this._normalizeData );
-		this._ruleStack.use( this._isGameOver );
-		this._ruleStack.use( this._isCorrectPlayersTurn );
-		this._ruleStack.use( this._isMovingFromGutter );
-		this._ruleStack.use( this._canMove );
-		this._ruleStack.use( this._isPieceJumping );
-		this._ruleStack.use( this._commitMove );
-		this._ruleStack.use( this._orientPawn );
-		this._ruleStack.use( this._endTurn );
-		this._ruleStack.use( this._checkForWin );
-
-		// Middleware used for validating a move
-		this._validationStack = new MiddlewareStack<MoveData>();
-		this._validationStack.use( this._normalizeData );
-		this._validationStack.use( this._isGameOver );
-		this._validationStack.use( this._isCorrectPlayersTurn );
-		this._validationStack.use( this._isMovingFromGutter );
-		this._validationStack.use( this._canMove );
-		this._validationStack.use( this._isPieceJumping );
+		this._resetAllPieces();
 	}
 
 	/**
-	 * Sets the on win callback
+	 * Register a callback to be invoked when the game ends.
+	 * @param fn - Called with the final game state when a winner is declared.
 	 */
 	onWin( fn: ( state: GameState ) => void ): void {
-		this._onWin = fn;
+		this._winCallback = fn;
 	}
 
 	/**
-	 * Attempts to move the specified piece for the specified player
-	 * to the specified coordinates
-	 * @throws {GameException} - Throws one of the derived game exceptions
+	 * Execute a move. Throws a GameException subclass if the move is invalid.
+	 * @param input - The move to attempt.
+	 * @throws {PlayerTurnException} If it is not this player's turn.
+	 * @throws {GameOverException} If the game is already over.
+	 * @throws {IllegalMoveException} If the move violates game rules.
 	 */
-	takeTurn( move: MoveInput ): void {
-		// Cast is intentional: _normalizeData transforms the raw input into MoveData
-		this._ruleStack.dispatch( move as unknown as MoveData );
+	takeTurn( input: MoveInput ): void {
+		const move = this._normalize( input );
+
+		this._assertGameActive();
+		this._assertTurn( move );
+
+		if ( this._handleGutterMove( move ) ) return;
+
+		this._assertCanMove( move );
+		this._assertNoJumping( move );
+
+		this._applyMove( move );
+		this._finalizeTurn( move );
 	}
 
 	/**
-	 * Determines whether the given move is against the rules or not
-	 * @throws {GameException} - Throws one of the derived game exceptions
+	 * Check whether a move is valid without mutating game state.
+	 * @param input - The move to validate.
+	 * @returns `true` if the move is legal, `false` otherwise.
 	 */
-	moveIsValid( move: MoveInput ): boolean {
-		let isValid = true;
-		this.dryRun = true;
-
+	moveIsValid( input: MoveInput ): boolean {
 		try {
-			this._validationStack.dispatch( move as unknown as MoveData );
-		} catch ( e ) {
-			isValid = false;
-		}
+			const move = this._normalize( input );
 
-		this.dryRun = false;
-		return isValid;
-	}
+			this._assertGameActive();
+			this._assertTurn( move );
 
-	/**
-	 * Forfeits the game for whichever player is passed to the function. If
-	 * no player is passed, the player whose turn it currently is forfeits
-	 */
-	forfeit( playerNum: PlayerNum | null = null ): void {
-		let winner: PlayerNum;
+			if ( this._isGutterMoveValid( move ) ) return true;
 
-		if ( playerNum === 1 )
-			winner = 2;
-		else if ( playerNum === 2 )
-			winner = 1;
-		else {
-			winner = this.state.turn === 1 ? 2 : 1;
-		}
+			this._assertCanMove( move );
+			this._assertNoJumping( move );
 
-		this._declareWinner({ playerNum: winner });
-	}
-
-	/**
-	 * Manually updates the game state irrespective of the game rule stack.
-	 */
-	setState( state: GameStateInput ): void {
-		if ( state.turn !== 1 && state.turn !== 2 )
-			throw new GameException( "GameState.turn must be 1 or 2" );
-		if ( typeof state.turnCount !== "number" || state.turnCount < 0 )
-			throw new GameException( "GameState.turnCount must be a positive number" );
-		if ( state.winner !== null && state.winner !== 1 && state.winner !== 2 )
-			throw new GameException( "GameState.winner must be one of null, 1, or 2" );
-
-		try {
-			if ( state.p1 ) {
-				const p1 = state.p1;
-				p1.pawn = p1.pawn || { x: null, y: null };
-				p1.rook = p1.rook || { x: null, y: null };
-				p1.knight = p1.knight || { x: null, y: null };
-				p1.bishop = p1.bishop || { x: null, y: null };
-				this.state.p1.pawn.move( p1.pawn.x, p1.pawn.y );
-				this.state.p1.rook.move( p1.rook.x, p1.rook.y );
-				this.state.p1.knight.move( p1.knight.x, p1.knight.y );
-				this.state.p1.bishop.move( p1.bishop.x, p1.bishop.y );
-			}
-
-			if ( state.p2 ) {
-				const p2 = state.p2;
-				p2.pawn = p2.pawn || { x: null, y: null };
-				p2.rook = p2.rook || { x: null, y: null };
-				p2.knight = p2.knight || { x: null, y: null };
-				p2.bishop = p2.bishop || { x: null, y: null };
-				this.state.p2.pawn.move( p2.pawn.x, p2.pawn.y );
-				this.state.p2.rook.move( p2.rook.x, p2.rook.y );
-				this.state.p2.knight.move( p2.knight.x, p2.knight.y );
-				this.state.p2.bishop.move( p2.bishop.x, p2.bishop.y );
-			}
-
-			this.state.turn = state.turn;
-			this.state.turnCount = state.turnCount;
-
-			if ( state.winner !== null )
-				this._declareWinner({ playerNum: state.winner });
-		} catch ( e ) {
-			throw new GameException( "Malformed state" );
+			return true;
+		} catch {
+			return false;
 		}
 	}
 
 	/**
-	 * Returns the game state
+	 * Forfeit the game. The current player (or the specified player) loses.
+	 * @param player - The player forfeiting. Defaults to the player whose turn it is.
 	 */
-	getState(): GameSnapshot {
-		const state: GameSnapshot = {
+	forfeit( player?: PlayerNum ): void {
+		const loser = player ?? this.state.turn;
+		const winner = loser === 1 ? 2 : 1;
+		this._declareWinner( winner );
+	}
+
+	/**
+	 * Returns a serializable snapshot of the current game state.
+	 */
+	getState() {
+		const snapshot = ( p: PlayerState ) => ({
+			pawn: { x: p.pawn.x(), y: p.pawn.y() },
+			rook: { x: p.rook.x(), y: p.rook.y() },
+			bishop: { x: p.bishop.x(), y: p.bishop.y() },
+			knight: { x: p.knight.x(), y: p.knight.y() }
+		});
+
+		return {
 			turn: this.state.turn,
 			turnCount: this.state.turnCount,
 			winner: this.state.winner,
-			p1: {} as PlayerSnapshot,
-			p2: {} as PlayerSnapshot
+			p1: snapshot( this.state.p1 ),
+			p2: snapshot( this.state.p2 )
+		};
+	}
+
+	/**
+	 * Overwrite the game state. Validates all fields; throws if malformed.
+	 * Useful for restoring a saved game.
+	 * @param s - The new state to apply.
+	 * @throws {GameException} If any field is invalid.
+	 */
+	setState( s: SetStateInput ): void {
+		const data = s as unknown as Record<string, unknown>;
+
+		if ( data["turn"] !== 1 && data["turn"] !== 2 )
+			throw new GameException( "Invalid turn value" );
+
+		const tc = data["turnCount"];
+		if ( typeof tc !== "number" || !Number.isFinite( tc ) || tc < 0 )
+			throw new GameException( "Invalid turnCount value" );
+
+		const w = data["winner"];
+		if ( w !== null && w !== 1 && w !== 2 )
+			throw new GameException( "Invalid winner value" );
+
+		this.state.turn = s.turn;
+		this.state.turnCount = s.turnCount;
+
+		const updatePlayer = (
+			player: PlayerState,
+			ps: SetStateInput["p1"]
+		): void => {
+			if ( !ps ) return;
+			for ( const name of ["pawn", "rook", "bishop", "knight"] as PieceName[] ) {
+				const coords = ps[name];
+				if ( coords !== undefined ) player[name].move( coords.x, coords.y );
+			}
 		};
 
-		addPieceToState( 1, "pawn", this.state.p1.pawn );
-		addPieceToState( 1, "rook", this.state.p1.rook );
-		addPieceToState( 1, "bishop", this.state.p1.bishop );
-		addPieceToState( 1, "knight", this.state.p1.knight );
-		addPieceToState( 2, "pawn", this.state.p2.pawn );
-		addPieceToState( 2, "rook", this.state.p2.rook );
-		addPieceToState( 2, "bishop", this.state.p2.bishop );
-		addPieceToState( 2, "knight", this.state.p2.knight );
+		updatePlayer( this.state.p1, s.p1 );
+		updatePlayer( this.state.p2, s.p2 );
 
-		return state;
-
-		function addPieceToState( playerNum: PlayerNum, pieceName: PieceName, pieceObj: Piece ): void {
-			const key = `p${playerNum}` as "p1" | "p2";
-			state[key][pieceName] = {
-				x: pieceObj.x(),
-				y: pieceObj.y()
-			};
+		if ( s.winner !== null ) {
+			this._declareWinner( s.winner );
+		} else {
+			this.state.winner = null;
 		}
 	}
 
-	/**
-	 * Once the middleware determines a winner, this function is called with
-	 * the final data object
-	 * @private
-	 */
-	_declareWinner( data: { playerNum: PlayerNum } ): void {
-		this.state.winner = data.playerNum;
-		this._onWin( this.state );
+	/* =========================
+	   Core Move Pipeline
+	========================= */
+
+	/** Normalize and validate raw move input into an internal Move object. */
+	private _normalize( input: MoveInput ): Move {
+		const data = input as unknown as Record<string, unknown>;
+		const player = data["player"];
+		const piece = data["piece"];
+		const x = data["x"];
+		const y = data["y"];
+
+		if ( player == null ) throw new TypeError( "No player specified" );
+		if ( player !== 1 && player !== 2 ) throw new TypeError( "Invalid player" );
+
+		if ( piece == null ) throw new TypeError( "No piece specified" );
+		const validPieces = ["pawn", "rook", "bishop", "knight"];
+		if ( !validPieces.includes( piece as string ) )
+			throw new TypeError( `Unknown piece ${piece} specified` );
+
+		if ( !Number.isInteger( x ) || !Number.isInteger( y ) )
+			throw new IllegalMoveException( "Coordinates must be integers" );
+
+		if ( ( x as number ) < 0 || ( y as number ) < 0 || ( x as number ) > 3 || ( y as number ) > 3 )
+			throw new IllegalMoveException( "Out of bounds" );
+
+		const playerNum = player as PlayerNum;
+		const pieceName = piece as PieceName;
+		const playerState = playerNum === 1 ? this.state.p1 : this.state.p2;
+
+		return {
+			playerNum,
+			player: playerState,
+			piece: playerState[pieceName],
+			x: x as number,
+			y: y as number
+		};
 	}
 
-	/**
-	 * Checks the provided coordinates to see if a piece occupies them.
-	 * @private
-	 * @returns The occupied result, or false if the square is empty
-	 */
-	_occupied( x: number, y: number ): OccupiedResult | false {
-		x = parseInt( String( x ) );
-		y = parseInt( String( y ) );
-		if ( Number.isNaN( x ) || Number.isNaN( y ) ) {
-			throw new Error( "_occupied called with NaN parameter" );
+	/** Throw if the game is already over. */
+	private _assertGameActive(): void {
+		if ( this.state.winner !== null ) {
+			throw new GameOverException( "Game is already over", this.state );
 		}
-
-		const pieceNames: PieceName[] = ["pawn", "rook", "knight", "bishop"];
-		for ( let i = 0; i < pieceNames.length; i++ ) {
-			const pieceName = pieceNames[i];
-			if (
-				this.state.p1[pieceName].x() === x &&
-				this.state.p1[pieceName].y() === y
-			)
-				return {
-					playerNum: 1,
-					piece: this.state.p1[pieceName]
-				};
-			if (
-				this.state.p2[pieceName].x() === x &&
-				this.state.p2[pieceName].y() === y
-			)
-				return {
-					playerNum: 2,
-					piece: this.state.p2[pieceName]
-				};
-		}
-		return false;
 	}
 
-	/**
-	 * Checks to see if the provided piece is on the board or not
-	 * @private
-	 * @returns True if piece is in the gutter, false if the piece is on the board
-	 */
-	_inGutter( piece: Piece ): boolean {
+	/** Throw if it is not this player's turn. */
+	private _assertTurn( move: Move ): void {
+		if ( move.playerNum !== this.state.turn ) {
+			throw new PlayerTurnException( "It's not your turn!" );
+		}
+	}
+
+	/** Handle placement from the gutter. Returns true if the move was handled. */
+	private _handleGutterMove( move: Move ): boolean {
+		if ( !this._inGutter( move.piece ) ) return false;
+
+		if ( this._occupied( move.x, move.y ) ) {
+			throw new IllegalMoveException( "Pieces moved from the gutter must be placed on an empty square" );
+		}
+
+		move.piece.move( move.x, move.y );
+		this._orientPawn( move );
+		this._endTurn();
+		this._checkWin( move );
+		return true;
+	}
+
+	/** Validate a gutter placement without mutating state. */
+	private _isGutterMoveValid( move: Move ): boolean {
+		if ( !this._inGutter( move.piece ) ) return false;
+		if ( this._occupied( move.x, move.y ) ) {
+			throw new IllegalMoveException( "Pieces moved from the gutter must be placed on an empty square" );
+		}
+		return true;
+	}
+
+	/** Throw if the piece's movement rules disallow the target square. */
+	private _assertCanMove( move: Move ): void {
+		if ( !move.piece.canMove( move.x, move.y, !!this._occupied( move.x, move.y ) ) ) {
+			throw new IllegalMoveException(
+				`${move.piece.name} cannot move to (${move.x},${move.y})`
+			);
+		}
+	}
+
+	/** Throw if a rook or bishop would need to jump over another piece. */
+	private _assertNoJumping( move: Move ): void {
+		if ( move.piece.name === "bishop" ) this._assertBishopPath( move );
+		if ( move.piece.name === "rook" ) this._assertRookPath( move );
+	}
+
+	private _assertBishopPath( move: Move ): void {
+		let x = move.piece.x()!;
+		let y = move.piece.y()!;
+		const dx = Math.sign( move.x - x );
+		const dy = Math.sign( move.y - y );
+
+		x += dx;
+		y += dy;
+
+		while ( x !== move.x ) {
+			if ( this._occupied( x, y ) ) {
+				throw new IllegalMoveException( "Bishops cannot jump over other pieces" );
+			}
+			x += dx;
+			y += dy;
+		}
+	}
+
+	private _assertRookPath( move: Move ): void {
+		const px = move.piece.x()!;
+		const py = move.piece.y()!;
+
+		if ( px === move.x ) {
+			const [start, end] = [py, move.y].sort( ( a, b ) => a - b );
+			for ( let i = start + 1; i < end; i++ ) {
+				if ( this._occupied( px, i ) ) {
+					throw new IllegalMoveException( "Rooks cannot jump over other pieces" );
+				}
+			}
+		} else {
+			const [start, end] = [px, move.x].sort( ( a, b ) => a - b );
+			for ( let i = start + 1; i < end; i++ ) {
+				if ( this._occupied( i, py ) ) {
+					throw new IllegalMoveException( "Rooks cannot jump over other pieces" );
+				}
+			}
+		}
+	}
+
+	/** Apply a move, capturing the occupying piece if the square is taken. */
+	private _applyMove( move: Move ): void {
+		const occupied = this._occupied( move.x, move.y );
+
+		if ( occupied ) {
+			if ( occupied.playerNum === move.playerNum ) {
+				throw new IllegalMoveException( "You cannot capture your own piece" );
+			}
+			occupied.piece.reset();
+		}
+
+		move.piece.move( move.x, move.y );
+	}
+
+	/** Orient the pawn, advance the turn, and check for a win. */
+	private _finalizeTurn( move: Move ): void {
+		this._orientPawn( move );
+		this._endTurn();
+		this._checkWin( move );
+	}
+
+	/* =========================
+	   Helpers
+	========================= */
+
+	private _occupied( x: number, y: number ) {
+		if ( !Number.isInteger( x ) || !Number.isInteger( y ) )
+			throw new TypeError( "Coordinates must be integers" );
+
+		for ( const pNum of [1, 2] as PlayerNum[] ) {
+			const player = pNum === 1 ? this.state.p1 : this.state.p2;
+			for ( const name of ["pawn", "rook", "bishop", "knight"] as PieceName[] ) {
+				const piece = player[name];
+				if ( piece.x() === x && piece.y() === y ) {
+					return { playerNum: pNum, piece };
+				}
+			}
+		}
+		return null;
+	}
+
+	private _inGutter( piece: Piece ): boolean {
 		if ( !( piece instanceof Piece ) )
-			throw new TypeError( "_inGutter called with non-piece parameter" );
+			throw new TypeError( "Expected a Piece instance" );
 		return piece.x() === null && piece.y() === null;
 	}
 
-	/*********************** Rule Middleware Stack****************************
-	 * Purpose:	Each function represents a single "rule" in the game         *
-	 *                                                                       *
-	 * NOTES:	Each rule is in the order that it is executed in the         *
-	 *    Middleware Stack. Anytime next() is called, the game moves on to   *
-	 *    the next function. Each function represents a single atomic "rule" *
-	 *    of the game                                                        *
-	 *************************************************************************/
-
-	/**
-	 * Ensures that the data dispatched to the middleware is in a consistent format
-	 * @private
-	 * @throws IllegalMoveException - Throws if data.x or data.y are not parseable ints
-	 */
-	_normalizeData( data: MoveData, next: NextFn ): void {
-		const MIN = 0, MAX = 3;
-		const knownPieces: PieceName[] = ["pawn", "rook", "bishop", "knight"];
-		// raw cast: input arrives as MoveInput but the stack types it as MoveData
-		const raw = data as unknown as { player: number; piece: string; x: number; y: number };
-		if ( !raw.player ) throw new TypeError( "No player specified" );
-		if ( !raw.piece ) throw new TypeError( "No piece specified" );
-		if ( !knownPieces.includes( raw.piece as PieceName ) ) throw new TypeError( `Unknown piece ${raw.piece} specified` );
-		data.playerNum = parseInt( String( raw.player ) ) as PlayerNum;
-		data.player = data.playerNum === 1 ? this.state.p1 : this.state.p2;
-		data.piece = data.player[raw.piece.toLowerCase() as PieceName];
-		data.x = parseInt( String( raw.x ) );
-		data.y = parseInt( String( raw.y ) );
-		if ( Number.isNaN( data.x ) || Number.isNaN( data.y ) )
-			throw new IllegalMoveException( "Coordinates must be integers" );
-		if (
-			data.x < MIN
-			|| data.y < MIN
-			|| data.x > MAX
-			|| data.y > MAX
-		)
-			throw new IllegalMoveException( "You requested to move to non-sane coodinates" );
-		next();
+	private _orientPawn( move: Move ): void {
+		if ( !( move.piece instanceof Pawn ) ) return;
+		if ( move.piece.y() === 0 ) move.piece.setDirection( "up" );
+		if ( move.piece.y() === 3 ) move.piece.setDirection( "down" );
 	}
 
-	/**
-	 * Ensures that the game isn't over before proceeding
-	 * @private
-	 * @throws GameOverException - Throws if the game is already over
-	 */
-	_isGameOver( data: MoveData, next: NextFn ): void {
-		if ( this.state.winner === null ) next();
-		else throw new GameOverException( "Game is already over", this.state );
-	}
-
-	/**
-	 * Ensures that the correct player is taking this turn
-	 * @private
-	 * @throws PlayerTurnException - Throws if the wrong player tries to take the turn
-	 */
-	_isCorrectPlayersTurn( data: MoveData, next: NextFn ): void {
-		if ( data.playerNum !== this.state.turn )
-			next( new PlayerTurnException( "It's not your turn!" ) );
-		next();
-	}
-
-	/**
-	 * Implements move-from-gutter rules: A piece can move from the gutter to
-	 * any EMPTY space on the board. As long as the gutter-rules are obeyed,
-	 * this middleware will skip straight to the _endTurn middleware
-	 * @private
-	 * @throws IllegalMoveException - Throws if the destination coordinates are already occupied
-	 */
-	_isMovingFromGutter( data: MoveData, next: NextFn ): void {
-		// Piece is not moving from gutter
-		if ( !this._inGutter( data.piece ) ) {
-			next();
-			return;
-		}
-
-		// Piece is moving from the gutter, but the destination is already occupied
-		if ( this._occupied( data.x, data.y ) ) {
-			next(
-				new IllegalMoveException(
-					"Pieces moved from the gutter must be placed on an empty square"
-				)
-			);
-			return;
-		}
-
-		// If the piece is in the gutter and the destination is not occupied
-		// the move is automatically valid. don't call next rule in the stack
-		if ( !this.dryRun ) {
-			data.piece.move( data.x, data.y );
-			if ( data.piece instanceof Pawn ) this._orientPawn( data );
-			this._endTurn( data );
-		}
-	}
-
-	/**
-	 * Ensures that the requested move is valid for the piece
-	 * @private
-	 * @throws IllegalMoveException - Throws if the piece's canMove function returns false
-	 */
-	_canMove( data: MoveData, next: NextFn ): void {
-		if ( data.piece.canMove( data.x, data.y, !!this._occupied( data.x, data.y ) ) )
-			next();
-		else
-			next(
-				new IllegalMoveException(
-					`${data.piece.name} cannot move to (${data.x},${data.y})`
-				)
-			);
-	}
-
-	/**
-	 * Ensures that bishops and rooks do not jump over other pieces
-	 * @private
-	 * @throws IllegalMoveException - Throws if the piece is a bishop or rook and tries to jump
-	 */
-	_isPieceJumping( data: MoveData, next: NextFn ): void {
-		if ( data.piece.name === "bishop" ) {
-			const pieceX = data.piece.x() as number;
-			const pieceY = data.piece.y() as number;
-			const xOffset = data.x - pieceX < 0 ? -1 : 1;
-			const yOffset = data.y - pieceY < 0 ? -1 : 1;
-
-			// NOTE: Does not check the old square or the new square, only the squares in between
-			let y = pieceY + yOffset;
-			let x = pieceX + xOffset;
-			while ( y !== data.y ) {
-				if ( this._occupied( x, y ) )
-					next(
-						new IllegalMoveException( "Bishops cannot jump over other pieces" )
-					);
-				y += yOffset;
-				x += xOffset;
-			}
-		} else if ( data.piece.name === "rook" ) {
-			const pieceX = data.piece.x() as number;
-			const pieceY = data.piece.y() as number;
-
-			// If the x coords didn't change, they moved vertically
-			if ( pieceX === data.x ) {
-				let lowY = ( data.y > pieceY ? pieceY : data.y ) + 1;
-				const highY = data.y > pieceY ? data.y : pieceY;
-
-				while ( lowY < highY ) {
-					if ( this._occupied( data.x, lowY ) )
-						next(
-							new IllegalMoveException( "Rooks cannot jump over other pieces" )
-						);
-					lowY++;
-				}
-			} else {
-				let lowX = ( data.x > pieceX ? pieceX : data.x ) + 1;
-				const highX = data.x > pieceX ? data.x : pieceX;
-
-				while ( lowX < highX ) {
-					if ( this._occupied( lowX, data.y ) )
-						next(
-							new IllegalMoveException( "Rooks cannot jump over other pieces" )
-						);
-					lowX++;
-				}
-			}
-		}
-
-		// If we make it here no movement errors were encountered
-		next();
-	}
-
-	/**
-	 * Moves the piece. If the destination coordinates are occupied, capture the piece
-	 * @private
-	 * @throws IllegalMoveException - Throws if player tries to capture one of their own pieces
-	 */
-	_commitMove( data: MoveData, next: NextFn ): void {
-		const occupied = this._occupied( data.x, data.y );
-
-		if ( occupied ) {
-			if ( occupied.playerNum === data.playerNum ) {
-				next( new IllegalMoveException( "You cannot capture your own piece" ) );
-			} else {
-				occupied.piece.reset();
-			}
-		}
-
-		data.piece.move( data.x, data.y );
-		next();
-	}
-
-	/**
-	 * Ensures that the pawn is facing the right direction
-	 * @private
-	 */
-	_orientPawn( data: MoveData, next?: NextFn ): void {
-		if ( data.piece instanceof Pawn ) {
-			if ( data.piece.y() === 0 ) data.piece.setDirection( "up" );
-			else if ( data.piece.y() === 3 ) data.piece.setDirection( "down" );
-		}
-
-		// _orientPawn can be called outside of the middleware stack.
-		// in such a case, next will be undefined
-		if ( next ) next();
-	}
-
-	/**
-	 * Takes care of end-of-turn chores
-	 * @private
-	 */
-	_endTurn( data: MoveData, next?: NextFn ): void {
+	private _endTurn(): void {
 		this.state.turn = this.state.turn === 1 ? 2 : 1;
 		this.state.turnCount++;
-		// If a piece is moved from the gutter, it skips straight to this
-		// middleware, in such a case, next won't be defined
-		if ( next ) next();
-		else this._checkForWin( data );
 	}
 
-	/**
-	 * Checks to see if the player that just moved has made a winning move.
-	 * @private
-	 */
-	_checkForWin( data: MoveData ): void {
-		// If any piece is in the gutter, the player hasn't won
-		if (
-			this._inGutter( data.player.pawn ) ||
-			this._inGutter( data.player.rook ) ||
-			this._inGutter( data.player.bishop ) ||
-			this._inGutter( data.player.knight )
-		) {
-			return;
-		}
-		// We could use any piece here, since we are checking to see if every
-		// piece has the same x (Horizontal Win) or same y (Vertical Win)
-		const x = data.player.pawn.x() as number;
-		const y = data.player.pawn.y() as number;
-
-		// Horizontal win
-		if (
-			data.player.bishop.x() === x &&
-			data.player.knight.x() === x &&
-			data.player.rook.x() === x
-		)
-			return this._declareWinner( data );
-
-		// Vertical win
-		if (
-			data.player.bishop.y() === y &&
-			data.player.knight.y() === y &&
-			data.player.rook.y() === y
-		)
-			return this._declareWinner( data );
-
-		// Check for diagonal win by checking to see if the absolute value
-		// of the difference in x and y is equal
+	private _checkWin( move: Move ): void {
 		const pieces = [
-			data.player.pawn,
-			data.player.rook,
-			data.player.knight,
-			data.player.bishop
+			move.player.pawn,
+			move.player.rook,
+			move.player.bishop,
+			move.player.knight
 		];
-		for ( let i = 0; i < 4; i++ ) {
-			if ( Math.abs( ( pieces[i].x() as number ) - x ) !== Math.abs( ( pieces[i].y() as number ) - y ) ) {
-				return;
-			}
+
+		if ( pieces.some( p => this._inGutter( p ) ) ) return;
+
+		const x0 = pieces[0].x()!;
+		const y0 = pieces[0].y()!;
+
+		// Horizontal: all pieces share the same row
+		if ( pieces.every( p => p.y() === y0 ) ) return this._declareWinner( move.playerNum );
+		// Vertical: all pieces share the same column
+		if ( pieces.every( p => p.x() === x0 ) ) return this._declareWinner( move.playerNum );
+		// Diagonal (\): all pieces share the same x - y value
+		const diag = x0 - y0;
+		if ( pieces.every( p => p.x()! - p.y()! === diag ) ) return this._declareWinner( move.playerNum );
+		// Anti-diagonal (/): all pieces share the same x + y value
+		const anti = x0 + y0;
+		if ( pieces.every( p => p.x()! + p.y()! === anti ) ) return this._declareWinner( move.playerNum );
+	}
+
+	private _declareWinner( player: PlayerNum ): void {
+		this.state.winner = player;
+		this._winCallback( this.state );
+	}
+
+	private _createPlayer( input: Partial<PlayerState>, reversed: boolean ): PlayerState {
+		return {
+			name: input.name ?? "",
+			pawn: input.pawn ?? new Pawn({ x: null, y: null, reversed }),
+			rook: input.rook ?? new Rook({ x: null, y: null }),
+			bishop: input.bishop ?? new Bishop({ x: null, y: null }),
+			knight: input.knight ?? new Knight({ x: null, y: null })
+		};
+	}
+
+	private _resetAllPieces(): void {
+		for ( const player of [this.state.p1, this.state.p2] ) {
+			player.pawn.setResetCoords( null, null );
+			player.rook.setResetCoords( null, null );
+			player.bishop.setResetCoords( null, null );
+			player.knight.setResetCoords( null, null );
 		}
-		// We will only get here if the player got 4 in a row diagonally
-		return this._declareWinner( data );
 	}
 }
