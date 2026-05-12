@@ -1,6 +1,6 @@
 {
   "name": "check4",
-  "version": "2.0.0",
+  "version": "0.0.1-alpha",
   "private": true,
   "description": "the check4 game files",
   "main": "dist/index.js",
@@ -9,6 +9,7 @@
     "test": "tests"
   },
   "scripts": {
+    "prepare": "npm run build",
     "build": "tsc",
     "test": "jest",
     "coverage": "jest --coverage",
@@ -31,7 +32,9 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "testMatch": ["**/tests/**/*.test.ts"]
+    "testMatch": [
+      "**/tests/**/*.test.ts"
+    ]
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
