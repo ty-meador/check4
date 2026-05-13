@@ -1,10 +1,12 @@
 "use strict";
 
+const GUTTER_X = -1;
+const GUTTER_Y = -1;
 export type Coord = number | null | undefined;
 
 export interface PieceProps {
-	x?: number | null;
-	y?: number | null;
+	x: number;
+	y: number;
 	name?: string;
 	skin?: string;
 	type?: string;
@@ -17,12 +19,10 @@ export class Piece {
 	name: string | undefined;
 	skin: string | undefined;
 	type: string | undefined;
-	coords: [Coord, Coord];
-	initCoords: [Coord, Coord];
+	coords: [number, number];
+	initCoords: [number, number];
 
-	constructor( props: PieceProps = {}) {
-		if ( props.x && props.x !== null ) props.x = parseInt( String( props.x ) );
-		if ( props.y && props.y !== null ) props.y = parseInt( String( props.y ) );
+	constructor( props: PieceProps ) {
 		if ( Number.isNaN( props.x ) || Number.isNaN( props.y ) )
 			throw new Error( "Coordinates must be integers or null" );
 
@@ -43,8 +43,10 @@ export class Piece {
 	 * @param y - The y coordinate to move to
 	 */
 	move( x: number | null, y: number | null ): void {
-		if ( x !== null ) x = parseInt( String( x ) );
-		if ( y !== null ) y = parseInt( String( y ) );
+		if ( x == null ) x = -1;
+		if ( y == null ) y = -1;
+		x = parseInt( String( x ) );
+		y = parseInt( String( y ) );
 
 		if ( Number.isNaN( x ) || Number.isNaN( y ) )
 			throw new Error( "Coordinates must be integers or null" );
@@ -60,9 +62,10 @@ export class Piece {
 	 * @throws TypeError - Throws an error if either coordinate is not a parseable int
 	 */
 	setResetCoords( x: number | null, y: number | null ): void {
-		if ( x !== null ) x = parseInt( String( x ) );
-		if ( y !== null ) y = parseInt( String( y ) );
-
+		if ( x == null ) x = -1;
+		if ( y == null ) y = -1;
+		x = parseInt( String( x ) );
+		y = parseInt( String( y ) );
 		if ( Number.isNaN( x ) || Number.isNaN( y ) )
 			throw new TypeError( "Coordinates must be integers or null" );
 
@@ -103,8 +106,10 @@ export interface PawnProps extends PieceProps {
 export class Pawn extends Piece {
 	reversed: boolean;
 
-	constructor( props: PawnProps = {}) {
-		props.name = props.name || "pawn";
+	constructor( props: PawnProps | undefined ) {
+		if( !props ) props = {x: GUTTER_X, y: GUTTER_Y};
+		props.name = props.name ?? "pawn";
+		props.type = props.type ?? "pawn";
 		super( props );
 		this.reversed = props.reversed || false;
 	}
@@ -193,8 +198,10 @@ export class Pawn extends Piece {
  * @extends {Piece}
  */
 export class Rook extends Piece {
-	constructor( props: PieceProps = {}) {
-		props.name = props.name || "rook";
+	constructor( props: PieceProps | undefined ) {
+		if( !props ) props = {x: GUTTER_X, y: GUTTER_Y};
+		props.name = props.name ?? "rook";
+		props.type = props.type ?? "rook";
 		super( props );
 	}
 
@@ -224,8 +231,9 @@ export class Rook extends Piece {
  * @extends {Piece}
  */
 export class Knight extends Piece {
-	constructor( props: PieceProps = {}) {
-		props.name = props.name || "knight";
+	constructor( props: PieceProps = {x: GUTTER_X, y: GUTTER_Y}) {
+		props.name = props.name ?? "knight";
+		props.type = props.type ?? "knight";
 		super( props );
 	}
 
@@ -256,8 +264,10 @@ export class Knight extends Piece {
  * @extends {Piece}
  */
 export class Bishop extends Piece {
-	constructor( props: PieceProps = {}) {
-		props.name = props.name || "bishop";
+	constructor( props: PieceProps | undefined ) {
+		if( !props ) props = {x: GUTTER_X, y: GUTTER_Y};
+		props.name = props.name ?? "bishop";
+		props.type = props.type ?? "bishop";
 		super( props );
 	}
 
