@@ -1,8 +1,10 @@
 "use strict";
 
-const GUTTER_X = -1;
-const GUTTER_Y = -1;
-export type Coord = number | null | undefined;
+
+
+export const OFF_BOARD_COORDS = {
+	x: -1, y: -1
+};
 
 export interface PieceProps {
 	x: number;
@@ -23,9 +25,6 @@ export class Piece {
 	initCoords: [number, number];
 
 	constructor( props: PieceProps ) {
-		if ( Number.isNaN( props.x ) || Number.isNaN( props.y ) )
-			throw new Error( "Coordinates must be integers or null" );
-
 		this.name = props.name;
 		this.skin = props.skin;
 		this.type = props.type;
@@ -83,14 +82,14 @@ export class Piece {
 	/**
 	 * Returns the current x coordinate of this piece
 	 */
-	x(): Coord {
+	x(): number {
 		return this.coords[ 0 ];
 	}
 
 	/**
 	 * Returns the current y coordinate of this piece
 	 */
-	y(): Coord {
+	y(): number {
 		return this.coords[ 1 ];
 	}
 }
@@ -106,8 +105,7 @@ export interface PawnProps extends PieceProps {
 export class Pawn extends Piece {
 	reversed: boolean;
 
-	constructor( props: PawnProps | undefined ) {
-		if( !props ) props = {x: GUTTER_X, y: GUTTER_Y};
+	constructor( props: PawnProps = {...OFF_BOARD_COORDS}) {
 		props.name = props.name ?? "pawn";
 		props.type = props.type ?? "pawn";
 		super( props );
@@ -150,11 +148,10 @@ export class Pawn extends Piece {
 	canMove( x: number, y: number, isAttack = false ): boolean {
 		x = parseInt( String( x ) );
 		y = parseInt( String( y ) );
-		if ( Number.isNaN( x ) || Number.isNaN( y ) ) return false;
 
 		// The number of tiles the requested move is in either direction
-		const diffY = y - ( this.y() as number );
-		const diffX = x - ( this.x() as number );
+		const diffY = y - this.y();
+		const diffX = x - this.x();
 
 		// Pawn can NEVER move more than 1 block
 		if ( Math.abs( diffY ) > 1 || Math.abs( diffX ) > 1 ) return false;
@@ -187,8 +184,8 @@ export class Pawn extends Piece {
 	 * @private
 	 */
 	_moveIsDiagnoal( x: number, y: number ): boolean {
-		const diffX = Math.abs( x - ( this.x() as number ) );
-		const diffY = Math.abs( y - ( this.y() as number ) );
+		const diffX = Math.abs( x - this.x() );
+		const diffY = Math.abs( y - this.y() );
 		return diffX === 1 && diffY === 1;
 	}
 }
@@ -198,8 +195,7 @@ export class Pawn extends Piece {
  * @extends {Piece}
  */
 export class Rook extends Piece {
-	constructor( props: PieceProps | undefined ) {
-		if( !props ) props = {x: GUTTER_X, y: GUTTER_Y};
+	constructor( props: PieceProps = {...OFF_BOARD_COORDS}) {
 		props.name = props.name ?? "rook";
 		props.type = props.type ?? "rook";
 		super( props );
@@ -215,7 +211,6 @@ export class Rook extends Piece {
 	canMove( x: number, y: number ): boolean {
 		x = parseInt( String( x ) );
 		y = parseInt( String( y ) );
-		if ( Number.isNaN( x ) || Number.isNaN( y ) ) return false;
 
 		// Horizontal move
 		if ( x === this.x() ) return true;
@@ -231,7 +226,7 @@ export class Rook extends Piece {
  * @extends {Piece}
  */
 export class Knight extends Piece {
-	constructor( props: PieceProps = {x: GUTTER_X, y: GUTTER_Y}) {
+	constructor( props: PieceProps = {...OFF_BOARD_COORDS}) {
 		props.name = props.name ?? "knight";
 		props.type = props.type ?? "knight";
 		super( props );
@@ -247,14 +242,13 @@ export class Knight extends Piece {
 	canMove( x: number, y: number ): boolean {
 		x = parseInt( String( x ) );
 		y = parseInt( String( y ) );
-		if ( Number.isNaN( x ) || Number.isNaN( y ) ) return false;
 		/**
 		 * We know the Knights move is valid if the absolute value of the difference in
 		 * one value is 2 and the absolute value of the difference of the other is 1
 		 */
 		return (
-			( Math.abs( x - ( this.x() as number ) ) == 2 && Math.abs( y - ( this.y() as number ) ) == 1 ) ||
-			( Math.abs( x - ( this.x() as number ) ) == 1 && Math.abs( y - ( this.y() as number ) ) == 2 )
+			( Math.abs( x - this.x() ) == 2 && Math.abs( y - this.y() ) == 1 ) ||
+			( Math.abs( x - this.x() ) == 1 && Math.abs( y - this.y() ) == 2 )
 		);
 	}
 }
@@ -264,8 +258,7 @@ export class Knight extends Piece {
  * @extends {Piece}
  */
 export class Bishop extends Piece {
-	constructor( props: PieceProps | undefined ) {
-		if( !props ) props = {x: GUTTER_X, y: GUTTER_Y};
+	constructor( props: PieceProps= {...OFF_BOARD_COORDS}) {
 		props.name = props.name ?? "bishop";
 		props.type = props.type ?? "bishop";
 		super( props );
@@ -281,12 +274,11 @@ export class Bishop extends Piece {
 	canMove( x: number, y: number ): boolean {
 		x = parseInt( String( x ) );
 		y = parseInt( String( y ) );
-		if ( Number.isNaN( x ) || Number.isNaN( y ) ) return false;
 		/**
 		 * A Bishop's move is valid if the absolute value of the difference in x's is
 		 * equal to the absolute value of the difference in y's ie, a diagnoal move.
 		 */
-		return Math.abs( x - ( this.x() as number ) ) === Math.abs( y - ( this.y() as number ) );
+		return Math.abs( x - this.x() ) === Math.abs( y - this.y() );
 	}
 }
 
