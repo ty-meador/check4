@@ -1,6 +1,6 @@
 "use strict";
 
-import { Pawn, Rook, Knight, Bishop, Piece } from "./Pieces";
+import { Pawn, Rook, Knight, Bishop, Piece, OFF_BOARD_COORDS } from "./Pieces";
 import {
 	GameException,
 	IllegalMoveException,
@@ -440,19 +440,19 @@ export default class Check4 {
 	private _createPlayer( input: Partial<PlayerState>, reversed: boolean ): PlayerState {
 		return {
 			name: input.name ?? "",
-			pawn: input.pawn ?? new Pawn({ x: null, y: null, reversed }),
-			rook: input.rook ?? new Rook({ x: null, y: null }),
-			bishop: input.bishop ?? new Bishop({ x: null, y: null }),
-			knight: input.knight ?? new Knight({ x: null, y: null })
+			pawn: input.pawn ?? new Pawn({...OFF_BOARD_COORDS, reversed }),
+			rook: input.rook ?? new Rook({...OFF_BOARD_COORDS }),
+			bishop: input.bishop ?? new Bishop({...OFF_BOARD_COORDS }),
+			knight: input.knight ?? new Knight({...OFF_BOARD_COORDS })
 		};
 	}
 
 	private _resetAllPieces(): void {
 		for ( const player of [this.state.p1, this.state.p2] ) {
-			player.pawn.setResetCoords( null, null );
-			player.rook.setResetCoords( null, null );
-			player.bishop.setResetCoords( null, null );
-			player.knight.setResetCoords( null, null );
+			player.pawn.setResetCoords( OFF_BOARD_COORDS.x, OFF_BOARD_COORDS.y );
+			player.rook.setResetCoords( OFF_BOARD_COORDS.x, OFF_BOARD_COORDS.y );
+			player.bishop.setResetCoords( OFF_BOARD_COORDS.x, OFF_BOARD_COORDS.y );
+			player.knight.setResetCoords( OFF_BOARD_COORDS.x, OFF_BOARD_COORDS.y );
 		}
 	}
 }
