@@ -43,9 +43,9 @@ impl fmt::Display for UnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             UnpackError::InvalidSquareCode { bit_offset, code } => write!(
-				f,
-				"invalid 5-bit square code {code} at bit offset {bit_offset} (valid codes are 0..=16)"
-			),
+                f,
+                "invalid 5-bit square code {code} at bit offset {bit_offset} (valid codes are 0..=16)"
+            ),
             UnpackError::UnusedBitsSet => {
                 write!(f, "bits above the 83-bit payload are set")
             }
@@ -80,7 +80,10 @@ impl Game {
     /// recomputed by [`Game::unpack`] from piece alignment. For every state
     /// reachable by play this reproduces the winner exactly (only the
     /// player who just moved can be aligned); a winner declared by
-    /// [`Game::forfeit`] is not recoverable from the packed form.
+    /// [`Game::forfeit`] is not recoverable from the packed form — such a
+    /// game round-trips as unfinished, or, if the forfeit overwrote an
+    /// alignment win (forfeit has no game-over guard, matching TS), with
+    /// the alignment winner restored instead.
     #[must_use]
     pub fn pack(&self) -> u128 {
         let mut bits = 0u128;

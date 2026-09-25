@@ -135,7 +135,11 @@ pub struct Move {
     pub y: u8,
 }
 
-/// Why a move was rejected. Mirrors the TypeScript engine's exceptions.
+/// Why a move was rejected. Mirrors the TypeScript engine's exceptions:
+/// [`MoveError::GameOver`] is `GameOverException`, [`MoveError::NotYourTurn`]
+/// is `PlayerTurnException`, and every other variant is an
+/// `IllegalMoveException` (the TS engine distinguishes those only by
+/// message; the variants here carry the same distinctions as data).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MoveError {
     /// The target coordinates are off the 4x4 board.
@@ -311,7 +315,13 @@ pub(crate) fn piece_index(player: Player, kind: PieceKind) -> usize {
 /// to the gutter with their move memory wiped. A piece may never move
 /// straight back to the square it just left; the gutter counts as a
 /// position, so a freshly dropped piece moves unrestricted.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+///
+/// `Game` deliberately implements neither `Eq` nor `Hash`: both documented
+/// position identities ([`Game::state_key`] and [`Game::pack`]) exclude
+/// `turn_count`, so deriving them here would make two rules-identical
+/// states compare unequal. Key transposition/repetition tables on
+/// `pack()` or `state_key()` instead.
+#[derive(Debug, Clone)]
 pub struct Game {
     pub(crate) turn: Player,
     pub(crate) turn_count: u32,
@@ -482,7 +492,7 @@ impl Game {
             }
         }
 
-        let mut key = String::with_capacity(48);
+        let mut key = String::with_capacity(49);
         key.push('t');
         key.push(char::from(b'0' + self.turn.number()));
         key.push('|');

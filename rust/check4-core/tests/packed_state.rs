@@ -10,7 +10,7 @@ fn initial_position_round_trips() {
     let bits = g.pack();
     let back = Game::unpack(bits).unwrap();
     assert_eq!(back.state_key(), g.state_key());
-    assert_eq!(back, g);
+    assert_eq!(back.pack(), bits);
 }
 
 /// Field placement follows the documented layout: positions at 5*i, prevs
@@ -119,17 +119,48 @@ fn unpack_recomputes_played_winner() {
 fn unpack_rejects_invalid_encodings() {
     // A square code of 17 in the first position field.
     assert_eq!(
-        Game::unpack(17),
-        Err(UnpackError::InvalidSquareCode {
+        Game::unpack(17).unwrap_err(),
+        UnpackError::InvalidSquareCode {
             bit_offset: 0,
             code: 17
-        })
+        }
+    );
+
+    let good = Game::new().pack();
+
+    // An invalid code in a non-first position field (p2 knight, bits 35..40).
+    assert_eq!(
+        Game::unpack((good & !(0x1Fu128 << 35)) | (31u128 << 35)).unwrap_err(),
+        UnpackError::InvalidSquareCode {
+            bit_offset: 35,
+            code: 31
+        }
+    );
+
+    // An invalid code in a prev field (p1 pawn prev, bits 40..45).
+    assert_eq!(
+        Game::unpack((good & !(0x1Fu128 << 40)) | (17u128 << 40)).unwrap_err(),
+        UnpackError::InvalidSquareCode {
+            bit_offset: 40,
+            code: 17
+        }
     );
 
     // A stray bit above the 83-bit payload.
-    let good = Game::new().pack();
     assert_eq!(
-        Game::unpack(good | 1 << 83),
-        Err(UnpackError::UnusedBitsSet)
+        Game::unpack(good | 1 << 83).unwrap_err(),
+        UnpackError::UnusedBitsSet
     );
+}
+
+/// Pins the documented caveat: a winner declared by forfeit is not stored
+/// in the packed form, so a resigned game round-trips as unfinished.
+#[test]
+fn forfeit_winner_is_not_recoverable_from_packed_form() {
+    let mut g = Game::new();
+    g.forfeit(None);
+    assert_eq!(g.winner(), Some(Player::Two));
+
+    let back = Game::unpack(g.pack()).unwrap();
+    assert_eq!(back.winner(), None);
 }

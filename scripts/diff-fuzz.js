@@ -17,23 +17,33 @@ if ( !fs.existsSync( enginePath ) ) {
 }
 const Check4 = require( "../dist/Check4" ).default;
 
-const PIECES = ["pawn", "rook", "bishop", "knight"];
+const U32_MAX = 4294967295;
 
 function parseArgs( argv ) {
 	const opts = { seed: 42, games: 100, plyCap: 200 };
 	const names = { "--seed": "seed", "--games": "games", "--ply-cap": "plyCap" };
-	for ( let i = 0; i < argv.length; i += 2 ) {
-		const key = names[argv[i]];
+	for ( let i = 0; i < argv.length; i++ ) {
+		let flag = argv[i];
+		let raw;
+		const eq = flag.indexOf( "=" );
+		if ( eq !== -1 ) {
+			raw = flag.slice( eq + 1 );
+			flag = flag.slice( 0, eq );
+		} else {
+			raw = argv[++i];
+		}
+		const key = names[flag];
 		if ( !key ) {
-			console.error( `diff-fuzz: unknown argument "${argv[i]}" (expected --seed, --games, --ply-cap)` );
+			console.error( `diff-fuzz: unknown argument "${flag}" (expected --seed, --games, --ply-cap)` );
 			process.exit( 1 );
 		}
-		const value = Number( argv[i + 1] );
-		if ( !Number.isInteger( value ) || value < 0 ) {
-			console.error( `diff-fuzz: ${argv[i]} needs a non-negative integer, got "${argv[i + 1]}"` );
+		// Same domain the Rust driver enforces via parse::<u32>(): a plain
+		// decimal u32 — no exponents, hex, or silent 2^32 wrapping.
+		if ( raw === undefined || !/^\d+$/.test( raw ) || Number( raw ) > U32_MAX ) {
+			console.error( `diff-fuzz: ${flag} needs a decimal integer in 0..=${U32_MAX}, got "${raw}"` );
 			process.exit( 1 );
 		}
-		opts[key] = value;
+		opts[key] = Number( raw );
 	}
 	return opts;
 }
@@ -50,24 +60,15 @@ function makeRng( baseSeed, gameIndex ) {
 	};
 }
 
-function legalList( game ) {
-	// canonical order: piece (pawn,rook,bishop,knight), x outer 0..3, y inner 0..3
-	const moves = [];
-	for ( const piece of PIECES )
-		for ( let x = 0; x < 4; x++ )
-			for ( let y = 0; y < 4; y++ ) {
-				const m = { player: game.state.turn, piece, x, y };
-				if ( game.moveIsValid( m ) ) moves.push( m );
-			}
-	return moves;
-}
-
 function playGame( baseSeed, g, plyCap, lines ) {
 	const game = new Check4({ p1: { name: "a" }, p2: { name: "b" } });
 	const rng = makeRng( baseSeed, g );
 	let ply = 0;
 	while ( ply < plyCap && game.state.winner === null ) {
-		const moves = legalList( game );
+		// The engine's own legalMoves() enumerates in the contract's
+		// canonical order (piece pawn/rook/bishop/knight, x outer, y inner),
+		// so the fuzz exercises the normative public API directly.
+		const moves = game.legalMoves();
 		if ( moves.length === 0 ) break; // theoretical stalemate
 		const listStr = moves.map( m => `${m.piece}@${m.x}${m.y}` ).join( ";" );
 		const m = moves[rng() % moves.length];
