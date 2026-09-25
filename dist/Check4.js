@@ -2,12 +2,20 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const Pieces_1 = require("./Pieces");
 const Check4Errors_1 = require("./Check4Errors");
+const PIECE_NAMES = ["pawn", "rook", "bishop", "knight"];
+const BOARD_SIZE = 4;
 /**
  * The Check4 game engine.
  *
  * A two-player 4x4 abstract strategy game. Each player controls 4 chess-flavored
  * pieces (Pawn, Rook, Knight, Bishop) and wins by aligning all four pieces
  * horizontally, vertically, or diagonally.
+ *
+ * All pieces start in the gutter (off the board). A piece in the gutter may be
+ * placed on any empty square. Captured pieces return to the gutter. A piece may
+ * never move straight back to the square it just left; the gutter counts as a
+ * position, so capture wipes that memory and a freshly dropped piece moves
+ * unrestricted.
  */
 class Check4 {
     /**
@@ -45,12 +53,7 @@ class Check4 {
      */
     takeTurn(input) {
         const move = this._normalize(input);
-        this._assertGameActive();
-        this._assertTurn(move);
-        if (this._handleGutterMove(move))
-            return;
-        this._assertCanMove(move);
-        this._assertNoJumping(move);
+        this._validateMove(move);
         this._applyMove(move);
         this._finalizeTurn(move);
     }
@@ -61,18 +64,31 @@ class Check4 {
      */
     moveIsValid(input) {
         try {
-            const move = this._normalize(input);
-            this._assertGameActive();
-            this._assertTurn(move);
-            if (this._isGutterMoveValid(move))
-                return true;
-            this._assertCanMove(move);
-            this._assertNoJumping(move);
+            this._validateMove(this._normalize(input));
             return true;
         }
         catch (_a) {
             return false;
         }
+    }
+    /**
+     * Enumerate every legal move for the player whose turn it is.
+     * @returns An array of legal MoveInput objects (empty if the game is over).
+     */
+    legalMoves() {
+        const moves = [];
+        if (this.state.winner !== null)
+            return moves;
+        for (const piece of PIECE_NAMES) {
+            for (let x = 0; x < BOARD_SIZE; x++) {
+                for (let y = 0; y < BOARD_SIZE; y++) {
+                    const input = { player: this.state.turn, piece, x, y };
+                    if (this.moveIsValid(input))
+                        moves.push(input);
+                }
+            }
+        }
+        return moves;
     }
     /**
      * Forfeit the game. The current player (or the specified player) loses.
@@ -84,26 +100,58 @@ class Check4 {
         this._declareWinner(winner);
     }
     /**
-     * Returns a serializable snapshot of the current game state.
+     * Returns a serializable snapshot of the current game state, including
+     * each piece's move memory and the pawns' directions. Feeding this back
+     * into setState() reproduces the game exactly.
      */
     getState() {
-        const snapshot = (p) => ({
-            pawn: { x: p.pawn.x(), y: p.pawn.y() },
-            rook: { x: p.rook.x(), y: p.rook.y() },
-            bishop: { x: p.bishop.x(), y: p.bishop.y() },
-            knight: { x: p.knight.x(), y: p.knight.y() }
+        const coord = (c) => (c == null ? null : c);
+        const pieceSnapshot = (p) => ({
+            x: coord(p.x()),
+            y: coord(p.y()),
+            prev: { x: coord(p.prevCoords[0]), y: coord(p.prevCoords[1]) }
+        });
+        const playerSnapshot = (p) => ({
+            pawn: { ...pieceSnapshot(p.pawn), direction: p.pawn.getDirection() },
+            rook: pieceSnapshot(p.rook),
+            bishop: pieceSnapshot(p.bishop),
+            knight: pieceSnapshot(p.knight)
         });
         return {
             turn: this.state.turn,
             turnCount: this.state.turnCount,
             winner: this.state.winner,
-            p1: snapshot(this.state.p1),
-            p2: snapshot(this.state.p2)
+            p1: playerSnapshot(this.state.p1),
+            p2: playerSnapshot(this.state.p2)
         };
+    }
+    /**
+     * Returns a canonical string identifying the current position: turn,
+     * winner, every piece's coordinates and move memory, and pawn directions.
+     * Two states with the same key are identical for rules purposes (the same
+     * moves are legal from both). turnCount is deliberately excluded so the
+     * key can be used for repetition detection by higher layers.
+     */
+    stateKey() {
+        var _a;
+        const c = (v) => (v == null ? "-" : String(v));
+        const pieceKey = (p) => `${c(p.x())}${c(p.y())}${c(p.prevCoords[0])}${c(p.prevCoords[1])}`;
+        const playerKey = (p) => PIECE_NAMES.map(name => pieceKey(p[name])).join(",") +
+            `,${p.pawn.getDirection() === "up" ? "u" : "d"}`;
+        return [
+            `t${this.state.turn}`,
+            `w${(_a = this.state.winner) !== null && _a !== void 0 ? _a : "-"}`,
+            playerKey(this.state.p1),
+            playerKey(this.state.p2)
+        ].join("|");
     }
     /**
      * Overwrite the game state. Validates all fields; throws if malformed.
      * Useful for restoring a saved game.
+     *
+     * Pieces updated without an explicit `prev` have their move memory cleared
+     * (no square is forbidden to them). Pass the `prev` from getState() to
+     * restore a game exactly.
      * @param s - The new state to apply.
      * @throws {GameException} If any field is invalid.
      */
@@ -120,12 +168,19 @@ class Check4 {
         this.state.turn = s.turn;
         this.state.turnCount = s.turnCount;
         const updatePlayer = (player, ps) => {
+            var _a, _b, _c, _d;
             if (!ps)
                 return;
-            for (const name of ["pawn", "rook", "bishop", "knight"]) {
-                const coords = ps[name];
-                if (coords !== undefined)
-                    player[name].move(coords.x, coords.y);
+            for (const name of PIECE_NAMES) {
+                const input = ps[name];
+                if (input === undefined)
+                    continue;
+                const piece = player[name];
+                piece.move(input.x, input.y);
+                piece.setPrevCoords((_b = (_a = input.prev) === null || _a === void 0 ? void 0 : _a.x) !== null && _b !== void 0 ? _b : null, (_d = (_c = input.prev) === null || _c === void 0 ? void 0 : _c.y) !== null && _d !== void 0 ? _d : null);
+                if (input.direction !== undefined && piece instanceof Pieces_1.Pawn) {
+                    piece.setDirection(input.direction);
+                }
             }
         };
         updatePlayer(this.state.p1, s.p1);
@@ -153,8 +208,7 @@ class Check4 {
             throw new TypeError("Invalid player");
         if (piece == null)
             throw new TypeError("No piece specified");
-        const validPieces = ["pawn", "rook", "bishop", "knight"];
-        if (!validPieces.includes(piece))
+        if (!PIECE_NAMES.includes(piece))
             throw new TypeError(`Unknown piece ${piece} specified`);
         if (!Number.isInteger(x) || !Number.isInteger(y))
             throw new Check4Errors_1.IllegalMoveException("Coordinates must be integers");
@@ -171,6 +225,25 @@ class Check4 {
             y: y
         };
     }
+    /**
+     * Run the full rules check for a move without mutating state. Throws a
+     * GameException subclass describing the first violated rule. Shared by
+     * takeTurn, moveIsValid, and legalMoves so the rules live in one place.
+     */
+    _validateMove(move) {
+        this._assertGameActive();
+        this._assertTurn(move);
+        if (this._inGutter(move.piece)) {
+            if (this._occupied(move.x, move.y)) {
+                throw new Check4Errors_1.IllegalMoveException("Pieces moved from the gutter must be placed on an empty square");
+            }
+            return;
+        }
+        this._assertCanMove(move);
+        this._assertNoJumping(move);
+        this._assertNotSelfCapture(move);
+        this._assertNoBacktrack(move);
+    }
     /** Throw if the game is already over. */
     _assertGameActive() {
         if (this.state.winner !== null) {
@@ -182,28 +255,6 @@ class Check4 {
         if (move.playerNum !== this.state.turn) {
             throw new Check4Errors_1.PlayerTurnException("It's not your turn!");
         }
-    }
-    /** Handle placement from the gutter. Returns true if the move was handled. */
-    _handleGutterMove(move) {
-        if (!this._inGutter(move.piece))
-            return false;
-        if (this._occupied(move.x, move.y)) {
-            throw new Check4Errors_1.IllegalMoveException("Pieces moved from the gutter must be placed on an empty square");
-        }
-        move.piece.move(move.x, move.y);
-        this._orientPawn(move);
-        this._endTurn();
-        this._checkWin(move);
-        return true;
-    }
-    /** Validate a gutter placement without mutating state. */
-    _isGutterMoveValid(move) {
-        if (!this._inGutter(move.piece))
-            return false;
-        if (this._occupied(move.x, move.y)) {
-            throw new Check4Errors_1.IllegalMoveException("Pieces moved from the gutter must be placed on an empty square");
-        }
-        return true;
     }
     /** Throw if the piece's movement rules disallow the target square. */
     _assertCanMove(move) {
@@ -217,6 +268,23 @@ class Check4 {
             this._assertBishopPath(move);
         if (move.piece.name === "rook")
             this._assertRookPath(move);
+    }
+    /** Throw if the target square holds one of the moving player's own pieces. */
+    _assertNotSelfCapture(move) {
+        const occupied = this._occupied(move.x, move.y);
+        if (occupied && occupied.playerNum === move.playerNum) {
+            throw new Check4Errors_1.IllegalMoveException("You cannot capture your own piece");
+        }
+    }
+    /**
+     * Throw if the piece is moving straight back to the square it just left.
+     * A piece's memory is one square deep and the gutter counts as a position,
+     * so captured and freshly dropped pieces are unrestricted.
+     */
+    _assertNoBacktrack(move) {
+        if (move.piece.prevCoords[0] === move.x && move.piece.prevCoords[1] === move.y) {
+            throw new Check4Errors_1.IllegalMoveException("A piece cannot move back to the square it just left");
+        }
     }
     _assertBishopPath(move) {
         let x = move.piece.x();
@@ -253,15 +321,14 @@ class Check4 {
             }
         }
     }
-    /** Apply a move, capturing the occupying piece if the square is taken. */
+    /**
+     * Apply an already-validated move: capture the occupying enemy piece if
+     * the square is taken (it returns to the gutter), then move the piece.
+     */
     _applyMove(move) {
         const occupied = this._occupied(move.x, move.y);
-        if (occupied) {
-            if (occupied.playerNum === move.playerNum) {
-                throw new Check4Errors_1.IllegalMoveException("You cannot capture your own piece");
-            }
+        if (occupied)
             occupied.piece.reset();
-        }
         move.piece.move(move.x, move.y);
     }
     /** Orient the pawn, advance the turn, and check for a win. */
@@ -278,7 +345,7 @@ class Check4 {
             throw new TypeError("Coordinates must be integers");
         for (const pNum of [1, 2]) {
             const player = pNum === 1 ? this.state.p1 : this.state.p2;
-            for (const name of ["pawn", "rook", "bishop", "knight"]) {
+            for (const name of PIECE_NAMES) {
                 const piece = player[name];
                 if (piece.x() === x && piece.y() === y) {
                     return { playerNum: pNum, piece };
@@ -290,7 +357,7 @@ class Check4 {
     _inGutter(piece) {
         if (!(piece instanceof Pieces_1.Piece))
             throw new TypeError("Expected a Piece instance");
-        return piece.x() === null && piece.y() === null;
+        return !piece.onBoard();
     }
     _orientPawn(move) {
         if (!(move.piece instanceof Pieces_1.Pawn))
@@ -338,18 +405,18 @@ class Check4 {
         var _a, _b, _c, _d, _e;
         return {
             name: (_a = input.name) !== null && _a !== void 0 ? _a : "",
-            pawn: (_b = input.pawn) !== null && _b !== void 0 ? _b : new Pieces_1.Pawn({ x: null, y: null, reversed }),
-            rook: (_c = input.rook) !== null && _c !== void 0 ? _c : new Pieces_1.Rook({ x: null, y: null }),
-            bishop: (_d = input.bishop) !== null && _d !== void 0 ? _d : new Pieces_1.Bishop({ x: null, y: null }),
-            knight: (_e = input.knight) !== null && _e !== void 0 ? _e : new Pieces_1.Knight({ x: null, y: null })
+            pawn: (_b = input.pawn) !== null && _b !== void 0 ? _b : new Pieces_1.Pawn({ ...Pieces_1.OFF_BOARD_COORDS, reversed }),
+            rook: (_c = input.rook) !== null && _c !== void 0 ? _c : new Pieces_1.Rook({ ...Pieces_1.OFF_BOARD_COORDS }),
+            bishop: (_d = input.bishop) !== null && _d !== void 0 ? _d : new Pieces_1.Bishop({ ...Pieces_1.OFF_BOARD_COORDS }),
+            knight: (_e = input.knight) !== null && _e !== void 0 ? _e : new Pieces_1.Knight({ ...Pieces_1.OFF_BOARD_COORDS })
         };
     }
     _resetAllPieces() {
         for (const player of [this.state.p1, this.state.p2]) {
-            player.pawn.setResetCoords(null, null);
-            player.rook.setResetCoords(null, null);
-            player.bishop.setResetCoords(null, null);
-            player.knight.setResetCoords(null, null);
+            player.pawn.setResetCoords(Pieces_1.OFF_BOARD_COORDS.x, Pieces_1.OFF_BOARD_COORDS.y);
+            player.rook.setResetCoords(Pieces_1.OFF_BOARD_COORDS.x, Pieces_1.OFF_BOARD_COORDS.y);
+            player.bishop.setResetCoords(Pieces_1.OFF_BOARD_COORDS.x, Pieces_1.OFF_BOARD_COORDS.y);
+            player.knight.setResetCoords(Pieces_1.OFF_BOARD_COORDS.x, Pieces_1.OFF_BOARD_COORDS.y);
         }
     }
 }

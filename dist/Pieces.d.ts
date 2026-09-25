@@ -1,7 +1,15 @@
+/**
+ * A board coordinate component. `null`/`undefined` mean the piece is off the
+ * board (in the gutter).
+ */
 export type Coord = number | null | undefined;
+export declare const OFF_BOARD_COORDS: {
+    x: Coord;
+    y: Coord;
+};
 export interface PieceProps {
-    x?: number | null;
-    y?: number | null;
+    x?: Coord;
+    y?: Coord;
     name?: string;
     skin?: string;
     type?: string;
@@ -15,24 +23,41 @@ export declare class Piece {
     type: string | undefined;
     coords: [Coord, Coord];
     initCoords: [Coord, Coord];
+    /**
+     * The coordinates this piece occupied before its most recent move. Game
+     * rules forbid moving a piece straight back to this square. The gutter
+     * counts as a position: a captured piece's memory is wiped (reset to the
+     * gutter), and a freshly dropped piece remembers the gutter, so neither
+     * carries a forbidden square.
+     */
+    prevCoords: [Coord, Coord];
     constructor(props?: PieceProps);
     canMove(_x: number, _y: number, _isAttack?: boolean): boolean;
     /**
-     * Moves the piece to the specified coordinates
-     * @param x - The x coordinate to move to
-     * @param y - The y coordinate to move to
+     * Moves the piece to the specified coordinates and remembers the square it
+     * left in `prevCoords`.
+     * @param x - The x coordinate to move to (null for the gutter)
+     * @param y - The y coordinate to move to (null for the gutter)
+     * @throws {TypeError} If either coordinate is not a parseable int or null
      */
-    move(x: number | null, y: number | null): void;
+    move(x: Coord, y: Coord): void;
+    /**
+     * Overwrites the piece's move memory. Used when restoring a saved game.
+     * @param x - The x coordinate the piece is remembered to have left
+     * @param y - The y coordinate the piece is remembered to have left
+     * @throws {TypeError} If either coordinate is not a parseable int or null
+     */
+    setPrevCoords(x: Coord, y: Coord): void;
     /**
      * Sets the coordinates the piece will be moved to when .reset() is called
      * @param x - The x coordinate
      * @param y - The y coordinate
-     * @throws TypeError - Throws an error if either coordinate is not a parseable int
+     * @throws {TypeError} If either coordinate is not a parseable int or null
      */
-    setResetCoords(x: number | null, y: number | null): void;
+    setResetCoords(x: Coord, y: Coord): void;
     /**
-     * Moves the piece back to its initial coordinates. These coordinates can be
-     * changed with setResetCoords( x, y )
+     * Moves the piece back to its initial coordinates and wipes its move
+     * memory. These coordinates can be changed with setResetCoords( x, y )
      */
     reset(): void;
     /**
@@ -43,6 +68,10 @@ export declare class Piece {
      * Returns the current y coordinate of this piece
      */
     y(): Coord;
+    /**
+     * Returns true if this piece is on the board (has numeric coordinates)
+     */
+    onBoard(): boolean;
 }
 export interface PawnProps extends PieceProps {
     reversed?: boolean;

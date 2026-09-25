@@ -1,17 +1,34 @@
 "use strict";
 
+/**
+ * A board coordinate component. `null`/`undefined` mean the piece is off the
+ * board (in the gutter).
+ */
+export type Coord = number | null | undefined;
 
-
-export const OFF_BOARD_COORDS = {
-	x: -1, y: -1
+export const OFF_BOARD_COORDS: { x: Coord; y: Coord } = {
+	x: null, y: null
 };
 
 export interface PieceProps {
-	x: number;
-	y: number;
+	x?: Coord;
+	y?: Coord;
 	name?: string;
 	skin?: string;
 	type?: string;
+}
+
+/**
+ * Parse a coordinate value. `null`/`undefined` pass through untouched (they
+ * mean "off the board"); anything else must parse to an integer.
+ * @throws {TypeError} If the value is neither null-ish nor a parseable int.
+ */
+function parseCoord( value: Coord ): Coord {
+	if ( value == null ) return value;
+	const parsed = parseInt( String( value ) );
+	if ( Number.isNaN( parsed ) )
+		throw new TypeError( "Coordinates must be integers or null" );
+	return parsed;
 }
 
 /**
@@ -21,15 +38,25 @@ export class Piece {
 	name: string | undefined;
 	skin: string | undefined;
 	type: string | undefined;
-	coords: [number, number];
-	initCoords: [number, number];
+	coords: [Coord, Coord];
+	initCoords: [Coord, Coord];
 
-	constructor( props: PieceProps ) {
+	/**
+	 * The coordinates this piece occupied before its most recent move. Game
+	 * rules forbid moving a piece straight back to this square. The gutter
+	 * counts as a position: a captured piece's memory is wiped (reset to the
+	 * gutter), and a freshly dropped piece remembers the gutter, so neither
+	 * carries a forbidden square.
+	 */
+	prevCoords: [Coord, Coord];
+
+	constructor( props: PieceProps = {}) {
 		this.name = props.name;
 		this.skin = props.skin;
 		this.type = props.type;
-		this.coords = [props.x, props.y];
-		this.initCoords = [props.x, props.y];
+		this.coords = [parseCoord( props.x ), parseCoord( props.y )];
+		this.initCoords = [this.coords[0], this.coords[1]];
+		this.prevCoords = [null, null];
 	}
 
 	canMove( _x: number, _y: number, _isAttack?: boolean ): boolean {
@@ -37,60 +64,69 @@ export class Piece {
 	}
 
 	/**
-	 * Moves the piece to the specified coordinates
-	 * @param x - The x coordinate to move to
-	 * @param y - The y coordinate to move to
+	 * Moves the piece to the specified coordinates and remembers the square it
+	 * left in `prevCoords`.
+	 * @param x - The x coordinate to move to (null for the gutter)
+	 * @param y - The y coordinate to move to (null for the gutter)
+	 * @throws {TypeError} If either coordinate is not a parseable int or null
 	 */
-	move( x: number | null, y: number | null ): void {
-		if ( x == null ) x = -1;
-		if ( y == null ) y = -1;
-		x = parseInt( String( x ) );
-		y = parseInt( String( y ) );
+	move( x: Coord, y: Coord ): void {
+		const px = parseCoord( x );
+		const py = parseCoord( y );
 
-		if ( Number.isNaN( x ) || Number.isNaN( y ) )
-			throw new Error( "Coordinates must be integers or null" );
+		this.prevCoords = [this.coords[0], this.coords[1]];
+		this.coords[0] = px;
+		this.coords[1] = py;
+	}
 
-		this.coords[ 0 ] = x;
-		this.coords[ 1 ] = y;
+	/**
+	 * Overwrites the piece's move memory. Used when restoring a saved game.
+	 * @param x - The x coordinate the piece is remembered to have left
+	 * @param y - The y coordinate the piece is remembered to have left
+	 * @throws {TypeError} If either coordinate is not a parseable int or null
+	 */
+	setPrevCoords( x: Coord, y: Coord ): void {
+		this.prevCoords = [parseCoord( x ), parseCoord( y )];
 	}
 
 	/**
 	 * Sets the coordinates the piece will be moved to when .reset() is called
 	 * @param x - The x coordinate
 	 * @param y - The y coordinate
-	 * @throws TypeError - Throws an error if either coordinate is not a parseable int
+	 * @throws {TypeError} If either coordinate is not a parseable int or null
 	 */
-	setResetCoords( x: number | null, y: number | null ): void {
-		if ( x == null ) x = -1;
-		if ( y == null ) y = -1;
-		x = parseInt( String( x ) );
-		y = parseInt( String( y ) );
-		if ( Number.isNaN( x ) || Number.isNaN( y ) )
-			throw new TypeError( "Coordinates must be integers or null" );
-
-		this.initCoords = [x, y];
+	setResetCoords( x: Coord, y: Coord ): void {
+		this.initCoords = [parseCoord( x ), parseCoord( y )];
 	}
 
 	/**
-	 * Moves the piece back to its initial coordinates. These coordinates can be
-	 * changed with setResetCoords( x, y )
+	 * Moves the piece back to its initial coordinates and wipes its move
+	 * memory. These coordinates can be changed with setResetCoords( x, y )
 	 */
 	reset(): void {
 		this.coords = [...this.initCoords];
+		this.prevCoords = [null, null];
 	}
 
 	/**
 	 * Returns the current x coordinate of this piece
 	 */
-	x(): number {
+	x(): Coord {
 		return this.coords[ 0 ];
 	}
 
 	/**
 	 * Returns the current y coordinate of this piece
 	 */
-	y(): number {
+	y(): Coord {
 		return this.coords[ 1 ];
+	}
+
+	/**
+	 * Returns true if this piece is on the board (has numeric coordinates)
+	 */
+	onBoard(): boolean {
+		return this.coords[0] != null && this.coords[1] != null;
 	}
 }
 
@@ -146,12 +182,14 @@ export class Pawn extends Piece {
 	 * @override
 	 */
 	canMove( x: number, y: number, isAttack = false ): boolean {
+		if ( !this.onBoard() ) return false;
+
 		x = parseInt( String( x ) );
 		y = parseInt( String( y ) );
 
 		// The number of tiles the requested move is in either direction
-		const diffY = y - this.y();
-		const diffX = x - this.x();
+		const diffY = y - ( this.y() as number );
+		const diffX = x - ( this.x() as number );
 
 		// Pawn can NEVER move more than 1 block
 		if ( Math.abs( diffY ) > 1 || Math.abs( diffX ) > 1 ) return false;
@@ -184,8 +222,8 @@ export class Pawn extends Piece {
 	 * @private
 	 */
 	_moveIsDiagnoal( x: number, y: number ): boolean {
-		const diffX = Math.abs( x - this.x() );
-		const diffY = Math.abs( y - this.y() );
+		const diffX = Math.abs( x - ( this.x() as number ) );
+		const diffY = Math.abs( y - ( this.y() as number ) );
 		return diffX === 1 && diffY === 1;
 	}
 }
@@ -209,6 +247,8 @@ export class Rook extends Piece {
 	 * @override
 	 */
 	canMove( x: number, y: number ): boolean {
+		if ( !this.onBoard() ) return false;
+
 		x = parseInt( String( x ) );
 		y = parseInt( String( y ) );
 
@@ -240,6 +280,8 @@ export class Knight extends Piece {
 	 * @override
 	 */
 	canMove( x: number, y: number ): boolean {
+		if ( !this.onBoard() ) return false;
+
 		x = parseInt( String( x ) );
 		y = parseInt( String( y ) );
 		/**
@@ -247,8 +289,8 @@ export class Knight extends Piece {
 		 * one value is 2 and the absolute value of the difference of the other is 1
 		 */
 		return (
-			( Math.abs( x - this.x() ) == 2 && Math.abs( y - this.y() ) == 1 ) ||
-			( Math.abs( x - this.x() ) == 1 && Math.abs( y - this.y() ) == 2 )
+			( Math.abs( x - ( this.x() as number ) ) == 2 && Math.abs( y - ( this.y() as number ) ) == 1 ) ||
+			( Math.abs( x - ( this.x() as number ) ) == 1 && Math.abs( y - ( this.y() as number ) ) == 2 )
 		);
 	}
 }
@@ -272,13 +314,15 @@ export class Bishop extends Piece {
 	 * @override
 	 */
 	canMove( x: number, y: number ): boolean {
+		if ( !this.onBoard() ) return false;
+
 		x = parseInt( String( x ) );
 		y = parseInt( String( y ) );
 		/**
 		 * A Bishop's move is valid if the absolute value of the difference in x's is
 		 * equal to the absolute value of the difference in y's ie, a diagnoal move.
 		 */
-		return Math.abs( x - this.x() ) === Math.abs( y - this.y() );
+		return Math.abs( x - ( this.x() as number ) ) === Math.abs( y - ( this.y() as number ) );
 	}
 }
 

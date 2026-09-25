@@ -1,62 +1,76 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Bishop = exports.Knight = exports.Rook = exports.Pawn = exports.Piece = void 0;
+exports.Bishop = exports.Knight = exports.Rook = exports.Pawn = exports.Piece = exports.OFF_BOARD_COORDS = void 0;
+exports.OFF_BOARD_COORDS = {
+    x: null, y: null
+};
+/**
+ * Parse a coordinate value. `null`/`undefined` pass through untouched (they
+ * mean "off the board"); anything else must parse to an integer.
+ * @throws {TypeError} If the value is neither null-ish nor a parseable int.
+ */
+function parseCoord(value) {
+    if (value == null)
+        return value;
+    const parsed = parseInt(String(value));
+    if (Number.isNaN(parsed))
+        throw new TypeError("Coordinates must be integers or null");
+    return parsed;
+}
 /**
  * A base class from which all other pieces are derived
  */
 class Piece {
     constructor(props = {}) {
-        if (props.x && props.x !== null)
-            props.x = parseInt(String(props.x));
-        if (props.y && props.y !== null)
-            props.y = parseInt(String(props.y));
-        if (Number.isNaN(props.x) || Number.isNaN(props.y))
-            throw new Error("Coordinates must be integers or null");
         this.name = props.name;
         this.skin = props.skin;
         this.type = props.type;
-        this.coords = [props.x, props.y];
-        this.initCoords = [props.x, props.y];
+        this.coords = [parseCoord(props.x), parseCoord(props.y)];
+        this.initCoords = [this.coords[0], this.coords[1]];
+        this.prevCoords = [null, null];
     }
     canMove(_x, _y, _isAttack) {
         return false;
     }
     /**
-     * Moves the piece to the specified coordinates
-     * @param x - The x coordinate to move to
-     * @param y - The y coordinate to move to
+     * Moves the piece to the specified coordinates and remembers the square it
+     * left in `prevCoords`.
+     * @param x - The x coordinate to move to (null for the gutter)
+     * @param y - The y coordinate to move to (null for the gutter)
+     * @throws {TypeError} If either coordinate is not a parseable int or null
      */
     move(x, y) {
-        if (x !== null)
-            x = parseInt(String(x));
-        if (y !== null)
-            y = parseInt(String(y));
-        if (Number.isNaN(x) || Number.isNaN(y))
-            throw new Error("Coordinates must be integers or null");
-        this.coords[0] = x;
-        this.coords[1] = y;
+        const px = parseCoord(x);
+        const py = parseCoord(y);
+        this.prevCoords = [this.coords[0], this.coords[1]];
+        this.coords[0] = px;
+        this.coords[1] = py;
+    }
+    /**
+     * Overwrites the piece's move memory. Used when restoring a saved game.
+     * @param x - The x coordinate the piece is remembered to have left
+     * @param y - The y coordinate the piece is remembered to have left
+     * @throws {TypeError} If either coordinate is not a parseable int or null
+     */
+    setPrevCoords(x, y) {
+        this.prevCoords = [parseCoord(x), parseCoord(y)];
     }
     /**
      * Sets the coordinates the piece will be moved to when .reset() is called
      * @param x - The x coordinate
      * @param y - The y coordinate
-     * @throws TypeError - Throws an error if either coordinate is not a parseable int
+     * @throws {TypeError} If either coordinate is not a parseable int or null
      */
     setResetCoords(x, y) {
-        if (x !== null)
-            x = parseInt(String(x));
-        if (y !== null)
-            y = parseInt(String(y));
-        if (Number.isNaN(x) || Number.isNaN(y))
-            throw new TypeError("Coordinates must be integers or null");
-        this.initCoords = [x, y];
+        this.initCoords = [parseCoord(x), parseCoord(y)];
     }
     /**
-     * Moves the piece back to its initial coordinates. These coordinates can be
-     * changed with setResetCoords( x, y )
+     * Moves the piece back to its initial coordinates and wipes its move
+     * memory. These coordinates can be changed with setResetCoords( x, y )
      */
     reset() {
         this.coords = [...this.initCoords];
+        this.prevCoords = [null, null];
     }
     /**
      * Returns the current x coordinate of this piece
@@ -70,6 +84,12 @@ class Piece {
     y() {
         return this.coords[1];
     }
+    /**
+     * Returns true if this piece is on the board (has numeric coordinates)
+     */
+    onBoard() {
+        return this.coords[0] != null && this.coords[1] != null;
+    }
 }
 exports.Piece = Piece;
 /**
@@ -77,8 +97,10 @@ exports.Piece = Piece;
  * @extends {Piece}
  */
 class Pawn extends Piece {
-    constructor(props = {}) {
-        props.name = props.name || "pawn";
+    constructor(props = { ...exports.OFF_BOARD_COORDS }) {
+        var _a, _b;
+        props.name = (_a = props.name) !== null && _a !== void 0 ? _a : "pawn";
+        props.type = (_b = props.type) !== null && _b !== void 0 ? _b : "pawn";
         super(props);
         this.reversed = props.reversed || false;
     }
@@ -116,10 +138,10 @@ class Pawn extends Piece {
      * @override
      */
     canMove(x, y, isAttack = false) {
+        if (!this.onBoard())
+            return false;
         x = parseInt(String(x));
         y = parseInt(String(y));
-        if (Number.isNaN(x) || Number.isNaN(y))
-            return false;
         // The number of tiles the requested move is in either direction
         const diffY = y - this.y();
         const diffX = x - this.x();
@@ -168,8 +190,10 @@ exports.Pawn = Pawn;
  * @extends {Piece}
  */
 class Rook extends Piece {
-    constructor(props = {}) {
-        props.name = props.name || "rook";
+    constructor(props = { ...exports.OFF_BOARD_COORDS }) {
+        var _a, _b;
+        props.name = (_a = props.name) !== null && _a !== void 0 ? _a : "rook";
+        props.type = (_b = props.type) !== null && _b !== void 0 ? _b : "rook";
         super(props);
     }
     /**
@@ -180,10 +204,10 @@ class Rook extends Piece {
      * @override
      */
     canMove(x, y) {
+        if (!this.onBoard())
+            return false;
         x = parseInt(String(x));
         y = parseInt(String(y));
-        if (Number.isNaN(x) || Number.isNaN(y))
-            return false;
         // Horizontal move
         if (x === this.x())
             return true;
@@ -201,8 +225,10 @@ exports.Rook = Rook;
  * @extends {Piece}
  */
 class Knight extends Piece {
-    constructor(props = {}) {
-        props.name = props.name || "knight";
+    constructor(props = { ...exports.OFF_BOARD_COORDS }) {
+        var _a, _b;
+        props.name = (_a = props.name) !== null && _a !== void 0 ? _a : "knight";
+        props.type = (_b = props.type) !== null && _b !== void 0 ? _b : "knight";
         super(props);
     }
     /**
@@ -213,10 +239,10 @@ class Knight extends Piece {
      * @override
      */
     canMove(x, y) {
+        if (!this.onBoard())
+            return false;
         x = parseInt(String(x));
         y = parseInt(String(y));
-        if (Number.isNaN(x) || Number.isNaN(y))
-            return false;
         /**
          * We know the Knights move is valid if the absolute value of the difference in
          * one value is 2 and the absolute value of the difference of the other is 1
@@ -231,8 +257,10 @@ exports.Knight = Knight;
  * @extends {Piece}
  */
 class Bishop extends Piece {
-    constructor(props = {}) {
-        props.name = props.name || "bishop";
+    constructor(props = { ...exports.OFF_BOARD_COORDS }) {
+        var _a, _b;
+        props.name = (_a = props.name) !== null && _a !== void 0 ? _a : "bishop";
+        props.type = (_b = props.type) !== null && _b !== void 0 ? _b : "bishop";
         super(props);
     }
     /**
@@ -243,10 +271,10 @@ class Bishop extends Piece {
      * @override
      */
     canMove(x, y) {
+        if (!this.onBoard())
+            return false;
         x = parseInt(String(x));
         y = parseInt(String(y));
-        if (Number.isNaN(x) || Number.isNaN(y))
-            return false;
         /**
          * A Bishop's move is valid if the absolute value of the difference in x's is
          * equal to the absolute value of the difference in y's ie, a diagnoal move.
