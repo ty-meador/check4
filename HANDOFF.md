@@ -215,7 +215,32 @@ lint clean on `src/`.
      transport. Tests: `tests/GameManager.test.ts`, `tests/Render.test.ts`,
      `tests/McpServer.test.ts`.
    - Deps: `@modelcontextprotocol/sdk` + `zod` (first runtime deps).
-4. Bot ladder + harness (ply cap lives here).
+4. ~~**Bot ladder + harness**~~ **DONE** — `check4-harness` crate
+   (depends only on check4-core):
+   - Ladder rungs: `random` (fuzz-contract xorshift32) → `greedy`
+     (depth-1) → `minimax2/4/6` (alpha-beta negamax). Shared eval
+     (`src/eval.rs`): pure **line potential** — for each of the 10
+     winning lines, uncontested lines score `LINE_SCORE[count]`
+     (superlinear: 0,1,8,64,4096), contested lines zero; antisymmetric
+     by construction. Search is deterministic (canonical move order,
+     stable orderings, first-best ties); wins score `WIN - ply` so
+     faster wins win. Ordering: immediate-win early return,
+     captures-first at shallow nodes, eval-sorted children at depth>=3
+     (~2.5x). Known upgrade when deeper rungs are needed: transposition
+     table keyed on `Game::pack()`.
+   - Harness (`src/harness.rs`): **the ply cap lives here** —
+     `play_game` adjudicates a draw at the cap (default 200) and on the
+     theoretical stalemate; `play_match` alternates seats and derives
+     per-game seeds like the fuzz harness (fully reproducible);
+     `round_robin` + standings (2/win, 1/draw).
+   - `cargo run --release -p check4-harness --bin ladder
+     [games/pair] [seed] [ply_cap]` prints pairwise results +
+     standings. Rungs verify empirically: strict strength ordering
+     minimax6 > minimax4 > minimax2 > greedy > random (random scores 0
+     across the board).
+   - Tests: bot determinism, win-in-one at every depth, depth-2
+     threat blocking, eval symmetry/accounting, ply-cap adjudication,
+     match reproducibility, round-robin bookkeeping.
 5. Solver (memoryless abstraction).
 6. iroh transport + matchmaking layer (WAN lives here).
 7. React Native app (last — protocol proven by then; keys in secure
