@@ -161,10 +161,41 @@ lint clean on `src/`.
    - `cargo test --manifest-path rust/Cargo.toml` — rules semantics,
      packed round-trip, golden trace. Clippy (`-D warnings`) and fmt
      clean.
-2. Move notation + protocol crate (**next up**): canonical move encoding,
-   Ed25519 signing, hash-chained game log.
-3. MCP server (Node + napi binding, or pure TS engine to start) — gets LLM
-   seats playing earliest.
+2. ~~**Move notation + protocol crate**~~ **DONE** — `check4-protocol`
+   crate (deps: `ed25519-dalek`, `sha2`; crate rustdoc is the wire-format
+   spec, this is the summary):
+   - **Canonical action encoding** (`src/notation.rs`): one byte — move =
+     `piece << 4 | x << 2 | y` (`0x00..=0x3F`, piece in canonical order),
+     resign = `0x80`; text form `<piece>@<x><y>` / `resign` (same shape
+     as the fuzz trace's legal-move lists).
+   - **Hash-chained signed log** (`src/chain.rs`):
+     `game_id = SHA-256("C4G1" || pubkey1 || pubkey2 || nonce)`; record
+     `i` signs `"C4M1" || game_id || prev_hash || ply(u32 BE) ||
+     action_byte || state_hash` where `state_hash = SHA-256(stateKey)`
+     of the position *after* the action; a record's chain hash commits
+     its signature too. **Locked:** every record — resign included — is
+     signed by the player to move (out-of-turn resignation waits for the
+     resigner's ply; clients queue the intent). Dual-signed `Seal` over
+     `"C4S1" || game_id || head_hash || result_byte` attests the result:
+     winner must match replay; draw (harness ply-cap adjudication) seals
+     only undecided games. Seats may share a key (self-play logs are
+     valid training data). `Recorder` is the writer side; `verify` fully
+     replays through check4-core checking ply order, chain links,
+     signatures, move legality and state commitments, then the seal.
+   - **Portable binary format** `C4L1` (`src/wire.rs`): fixed-size
+     records, byte-exact round-trip; structural decode only — semantics
+     stay `verify`'s job.
+   - Tests (34): notation round-trip + exhaustive rejection; honest logs
+     (scripted win, resignation, draw seal, shared-key self-play, seeded
+     random games via the fuzz PRNG); recorder misuse (wrong key,
+     illegal action, sealing twice, misreported results); a tamper
+     matrix hitting every `ChainError` (splice, reorder, truncate,
+     forged signature, cross-genesis replay, signed-but-illegal action,
+     signed-but-false state commitment); wire structural rejection incl.
+     hostile record counts.
+3. MCP server (**next up**; Node + napi binding, or pure TS engine to
+   start) — gets LLM seats playing earliest. Protocol contract: seats
+   hold Ed25519 keys, moves go into a `check4-protocol` chain.
 4. Bot ladder + harness (ply cap lives here).
 5. Solver (memoryless abstraction).
 6. iroh transport + matchmaking layer (WAN lives here).
