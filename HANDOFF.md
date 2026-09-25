@@ -193,9 +193,28 @@ lint clean on `src/`.
      forged signature, cross-genesis replay, signed-but-illegal action,
      signed-but-false state commitment); wire structural rejection incl.
      hostile record counts.
-3. MCP server (**next up**; Node + napi binding, or pure TS engine to
-   start) — gets LLM seats playing earliest. Protocol contract: seats
-   hold Ed25519 keys, moves go into a `check4-protocol` chain.
+3. ~~**MCP server**~~ **DONE** (pure TS engine; napi binding + key-backed
+   seats come later) — `src/mcp/`, bin `check4-mcp` (stdio):
+   - Tools: `new_game` (optionally seat the built-in random bot; seeded
+     with the fuzz-contract xorshift32 so bot games reproduce exactly),
+     `get_state` (token-lean ASCII board + status + `stateKey`),
+     `legal_moves` (`piece@xy` list), `make_move` (returns resulting
+     state + the bot's reply when it holds the next seat; engine
+     rejections come back as tool errors naming the violated rule),
+     `resign`, `wait_for_turn` (long-poll, never make the model poll),
+     `list_games`. Server `instructions` carry the full rules text.
+   - Renders optimize **tokens**: y=3 on top ("up" is up), P1 UPPER /
+     P2 lower glyphs with a one-line legend, situational lines (gutter,
+     pawn directions, no-backtrack blocks) omitted when empty.
+   - stdio is single-client, so the caller states which seat it acts
+     as (no auth); driving both seats is legitimate (self-play /
+     external orchestration). The bot's seat is guarded server-side.
+   - `GameManager` (sessions, bot, long-poll waiters) and renderers are
+     plain modules; MCP wiring is `src/mcp/server.ts` (`buildServer`),
+     tested end-to-end through a real client over the SDK's in-memory
+     transport. Tests: `tests/GameManager.test.ts`, `tests/Render.test.ts`,
+     `tests/McpServer.test.ts`.
+   - Deps: `@modelcontextprotocol/sdk` + `zod` (first runtime deps).
 4. Bot ladder + harness (ply cap lives here).
 5. Solver (memoryless abstraction).
 6. iroh transport + matchmaking layer (WAN lives here).
