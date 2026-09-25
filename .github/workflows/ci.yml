@@ -34,10 +34,15 @@ jobs:
       - run: npx eslint src/
       - run: npx jest
 
-      # Rust: core replica, protocol, harness.
-      - run: cargo fmt --manifest-path rust/Cargo.toml --check
-      - run: cargo clippy --manifest-path rust/Cargo.toml --all-targets -- -D warnings
-      - run: cargo test --manifest-path rust/Cargo.toml
+      # Rust: core replica, protocol, harness. cargo-fmt cannot resolve a
+      # workspace through --manifest-path ("Failed to find targets"), so
+      # all three run from the workspace directory.
+      - run: cargo fmt --check
+        working-directory: rust
+      - run: cargo clippy --all-targets -- -D warnings
+        working-directory: rust
+      - run: cargo test
+        working-directory: rust
 
       # The equivalence contract: both engines must trace byte-identically.
       - run: npm run fuzz:diff
