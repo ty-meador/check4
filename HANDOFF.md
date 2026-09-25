@@ -241,7 +241,19 @@ lint clean on `src/`.
    - Tests: bot determinism, win-in-one at every depth, depth-2
      threat blocking, eval symmetry/accounting, ply-cap adjudication,
      match reproducibility, round-robin bookkeeping.
-5. Solver (memoryless abstraction).
+5. Solver (memoryless abstraction) — **groundwork landed**: the
+   rules-preserving symmetry group lives in `check4-core`
+   (`src/symmetry.rs`). Pawns break rotations/diagonal mirrors, so the
+   group is `(Z/2)^3` (8 elements): `mirror_x`, `mirror_y` (flips pawn
+   directions), `swap_players` (swaps turn + winner; a pawn's direction
+   travels with the pawn). All commuting involutions; composition is
+   flag-XOR. Verified equivariant with play against the engine over
+   seeded random games (`tests/symmetry.rs`): move sets map
+   bijectively and `t(g) + t(m) == t(g + m)` for all 8 `t`.
+   `Game::canonical_pack()` = min `pack()` over the orbit — the
+   solver's dedup key (inherits pack's turn_count/forfeit caveats).
+   Still to build: the memoryless abstraction itself (wipe prev
+   memory), reachable-state enumeration, retrograde value iteration.
 6. iroh transport + matchmaking layer (WAN lives here).
 7. React Native app (last — protocol proven by then; keys in secure
    enclave, board UI uses `legalMoves` for highlighting).
