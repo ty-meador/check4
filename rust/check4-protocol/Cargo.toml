@@ -1,0 +1,11 @@
+[package]
+name = "check4-protocol"
+version = "0.1.0"
+edition = "2021"
+description = "Check4 wire protocol: canonical move encoding, Ed25519-signed hash-chained game logs"
+license = "MIT"
+
+[dependencies]
+check4-core = { path = "../check4-core" }
+ed25519-dalek = "3"
+sha2 = "0.11"

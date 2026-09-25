@@ -32,8 +32,11 @@
 
 mod game;
 mod packed;
+mod symmetry;
 
 pub mod fuzz;
+
+pub use symmetry::Transform;
 
 pub use game::{
     Direction, Game, GameSetup, Move, MoveError, PieceKind, PieceSetup, Player, SetupError,

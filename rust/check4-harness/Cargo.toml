@@ -1,0 +1,13 @@
+[package]
+name = "check4-harness"
+version = "0.1.0"
+edition = "2021"
+description = "Check4 bot ladder and self-play harness: random, greedy and minimax bots, ply-capped matches, round-robin tournaments"
+license = "MIT"
+
+[dependencies]
+check4-core = { path = "../check4-core" }
+
+[[bin]]
+name = "ladder"
+path = "src/bin/ladder.rs"
