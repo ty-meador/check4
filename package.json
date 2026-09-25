@@ -13,7 +13,9 @@
     "build": "tsc",
     "test": "jest",
     "coverage": "jest --coverage",
-    "coveralls": "jest --coverage && cat ./coverage/lcov.info | coveralls"
+    "coveralls": "jest --coverage && cat ./coverage/lcov.info | coveralls",
+    "fuzz:ts": "node scripts/diff-fuzz.js",
+    "fuzz:diff": "bash scripts/diff-fuzz.sh"
   },
   "repository": {
     "type": "git",

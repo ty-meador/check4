@@ -1,0 +1,8 @@
+[package]
+name = "check4-core"
+version = "0.1.0"
+edition = "2021"
+description = "Check4 rules engine: a proven-equivalent Rust replica of the repo's normative TypeScript engine."
+license = "LGPL-2.0-only"
+
+[dependencies]

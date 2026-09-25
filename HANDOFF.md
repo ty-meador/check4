@@ -140,12 +140,29 @@ lint clean on `src/`.
 
 ## Build order / next steps
 
-1. **Rust workspace scaffolding** (next up): `check4-core` crate — rules
-   port, packed state repr, `state_key()` matching the TS format, plus the
-   differential fuzz harness against the TS engine (drive both with random
-   legal move sequences, compare `stateKey()` after every ply).
-2. Move notation + protocol crate: canonical move encoding, Ed25519
-   signing, hash-chained game log.
+1. ~~**Rust workspace scaffolding**~~ **DONE** — `rust/` workspace,
+   `check4-core` crate (dependency-free, edition 2021): rules port,
+   packed state repr (83 bits in a u128: 8x5-bit pos + 8x5-bit prev +
+   2 pawn-dir bits + turn bit; `pos = x*4 + y`, 16 = gutter),
+   `state_key()` byte-exact to the TS format, `diff_fuzz` binary.
+   - **Differential fuzz harness**: `npm run fuzz:diff` (or
+     `bash scripts/diff-fuzz.sh [seed] [games] [plyCap]`) plays seeded
+     random games through both engines and diffs full traces — the
+     complete legal-move list *and* `stateKey()` after every ply, so any
+     rules divergence is caught at the exact ply it occurs. Shared
+     contract (xorshift32 PRNG, canonical move order pawn/rook/bishop/
+     knight x-outer y-inner, trace format V1) is implemented in
+     `rust/check4-core/src/fuzz.rs` and `scripts/diff-fuzz.js`.
+   - Verified: byte-identical over 2,700 games / ~400k plies across
+     seeds 42, 1337, 987654321, 0 (ply caps 200 and 400). A TS-generated
+     golden trace is checked in at
+     `rust/check4-core/tests/fixtures/golden_seed42.txt` so `cargo test`
+     re-proves parity without Node.
+   - `cargo test --manifest-path rust/Cargo.toml` — rules semantics,
+     packed round-trip, golden trace. Clippy (`-D warnings`) and fmt
+     clean.
+2. Move notation + protocol crate (**next up**): canonical move encoding,
+   Ed25519 signing, hash-chained game log.
 3. MCP server (Node + napi binding, or pure TS engine to start) — gets LLM
    seats playing earliest.
 4. Bot ladder + harness (ply cap lives here).
@@ -156,9 +173,11 @@ lint clean on `src/`.
 
 ## Conventions
 
-- Repo style: tabs, `space-in-parens` eslint style (`fn( arg )`), jest
-  tests in `tests/*.test.ts`, one concern per suite.
-- Branch: work on `claude/adoring-feynman-a0qbe1`; push with
+- Repo style (TS/JS): tabs, `space-in-parens` eslint style (`fn( arg )`),
+  jest tests in `tests/*.test.ts`, one concern per suite. Rust follows
+  rustfmt defaults; keep clippy clean with `-D warnings`.
+- Branch: currently `claude/upbeat-euler-52mn7q` (carries the full
+  `claude/adoring-feynman-a0qbe1` history); push with
   `git push -u origin <branch>`.
 - The tests are the spec — when code and tests disagree, the tests win
   (this is how the gutter regression was caught).
