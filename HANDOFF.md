@@ -241,7 +241,9 @@ lint clean on `src/`.
    - Tests: bot determinism, win-in-one at every depth, depth-2
      threat blocking, eval symmetry/accounting, ply-cap adjudication,
      match reproducibility, round-robin bookkeeping.
-5. Solver (memoryless abstraction) — **groundwork landed**: the
+5. Solver (memoryless abstraction) — **deprioritized (product first)**:
+   benchmarking at scale waits until the playable product exists, so the
+   solver resumes after the networking/app milestones. Groundwork landed: the
    rules-preserving symmetry group lives in `check4-core`
    (`src/symmetry.rs`). Pawns break rotations/diagonal mirrors, so the
    group is `(Z/2)^3` (8 elements): `mirror_x`, `mirror_y` (flips pawn
@@ -254,8 +256,46 @@ lint clean on `src/`.
    solver's dedup key (inherits pack's turn_count/forfeit caveats).
    Still to build: the memoryless abstraction itself (wipe prev
    memory), reachable-state enumeration, retrograde value iteration.
-6. iroh transport + matchmaking layer (WAN lives here).
-7. React Native app (last — protocol proven by then; keys in secure
+6. ~~iroh transport~~ **DONE (transport + live play; matchmaking still
+   open)** — `check4-net` crate, three layers, each testable without the
+   ones above:
+   - **identity** — one Ed25519 keypair per player, raw 32-byte seed on
+     disk (0600), created on first use. The key is simultaneously the
+     iroh endpoint id and the game-log seat key: the QUIC TLS handshake
+     authenticates the peer's key, so session seat keys arrive proven.
+     Secure-enclave unlock stays mobile scope.
+   - **session** — live game protocol V1 over any ordered byte stream
+     (module rustdoc is the normative wire spec; transport-agnostic,
+     tested over in-memory pipes). Handshake fixes the `Genesis` (host
+     picks nonce + seat); both sides run a `Recorder` — `record` for
+     own moves, the new `Recorder::ingest` for the opponent's, so every
+     arriving record is fully verified (chain link, signature, legality,
+     state commitment) before touching game state. RECORD frames are
+     the records' exact C4L1 in-log bytes (`wire::record_to_bytes`).
+     Seal exchange (`Recorder::seal_signature`) yields the dual-signed
+     portable log on both sides. Resign is an in-turn action (locked
+     rule); live sessions have no draws (ply-cap adjudication stays in
+     the harness).
+   - **net** — iroh 1.2: ALPN `check4/1`, n0 defaults (public relays +
+     DNS lookup) plus mDNS LAN discovery (hosts advertise a
+     `check4-host` user-data marker), join-anywhere tickets
+     (`iroh-tickets`). Relays are untrusted plumbing. CI covers the
+     whole stack over real QUIC on localhost (no egress needed); mDNS
+     itself is CI-untestable (multicast) — exercised via the CLI.
+7. ~~Playable client (v1: terminal)~~ **DONE** — `check4-cli` crate,
+   bin `check4`: `id` (create/show identity), `host [--seat 1|2]`
+   (advertise on LAN + print ticket), `join <ticket>` / `join --lan`,
+   `verify <log.c4l1>`. Board render mirrors the normative TS MCP
+   renderer layout. Illegal input re-prompts (engine error named,
+   nothing signed or sent); finished games are sealed and archived to
+   `$CHECK4_HOME/games/<id>.c4l1` (default `~/.check4`); on disconnect
+   the signed partial log is saved. Smoke-verified: two processes,
+   ticket join over real QUIC, full game, both archives byte-identical
+   and `verify`-clean. **First human-playable build.**
+8. Matchmaking layer (WAN pairing, stranger lobby, ratings/leaderboard,
+   correspondence — all deferred here by the earlier decision; ticket
+   join already works across the internet when a relay is reachable).
+9. React Native app (last — protocol proven by then; keys in secure
    enclave, board UI uses `legalMoves` for highlighting).
 
 ## Conventions
@@ -263,8 +303,7 @@ lint clean on `src/`.
 - Repo style (TS/JS): tabs, `space-in-parens` eslint style (`fn( arg )`),
   jest tests in `tests/*.test.ts`, one concern per suite. Rust follows
   rustfmt defaults; keep clippy clean with `-D warnings`.
-- Branch: currently `claude/upbeat-euler-52mn7q` (carries the full
-  `claude/adoring-feynman-a0qbe1` history); push with
+- Branch: currently `claude/vigilant-fermat-c3w3ts`; push with
   `git push -u origin <branch>`.
 - The tests are the spec — when code and tests disagree, the tests win
   (this is how the gutter regression was caught).

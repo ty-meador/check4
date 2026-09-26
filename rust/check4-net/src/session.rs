@@ -296,6 +296,13 @@ where
         &self.recorder.log().genesis
     }
 
+    /// The signed log built so far (unsealed until [`GameSession::finish`];
+    /// useful for saving a partial log when the peer disconnects).
+    #[must_use]
+    pub fn log(&self) -> &GameLog {
+        self.recorder.log()
+    }
+
     /// Whether it is this side's turn (false once the game is over).
     #[must_use]
     pub fn my_turn(&self) -> bool {

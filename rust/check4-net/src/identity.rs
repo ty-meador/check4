@@ -114,6 +114,13 @@ impl Identity {
     }
 }
 
+/// The canonical display form of any player's key (see
+/// [`Identity::player_id`]).
+#[must_use]
+pub fn display_key(key: &VerifyingKey) -> String {
+    iroh::PublicKey::from_verifying_key(*key).to_z32()
+}
+
 #[cfg(unix)]
 fn write_owner_only(path: &Path, bytes: &[u8]) -> io::Result<()> {
     use io::Write;

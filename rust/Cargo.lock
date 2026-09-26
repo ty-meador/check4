@@ -261,6 +261,13 @@ dependencies = [
 [[package]]
 name = "check4-cli"
 version = "0.1.0"
+dependencies = [
+ "check4-core",
+ "check4-net",
+ "check4-protocol",
+ "rand",
+ "tokio",
+]
 
 [[package]]
 name = "check4-core"

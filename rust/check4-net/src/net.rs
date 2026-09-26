@@ -16,12 +16,16 @@ use check4_protocol::VerifyingKey;
 use iroh::endpoint::presets;
 use iroh::endpoint::{Connection, RecvStream, SendStream};
 use iroh::endpoint_info::UserData;
-use iroh::{Endpoint, EndpointAddr, EndpointId};
+use iroh::{Endpoint, EndpointId};
 use iroh_mdns_address_lookup::{DiscoveryEvent, MdnsAddressLookup};
 use iroh_tickets::endpoint::EndpointTicket;
 use n0_future::StreamExt;
 
 use crate::identity::Identity;
+
+/// Re-exported so clients can name peer addresses without depending on
+/// iroh directly.
+pub use iroh::EndpointAddr;
 
 /// The ALPN identifying Check4 live-session connections (protocol V1).
 pub const ALPN: &[u8] = b"check4/1";
