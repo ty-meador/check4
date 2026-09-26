@@ -38,6 +38,7 @@ pub fn winning_line() -> [Action; 7] {
 }
 
 /// Record the full winning line and seal it, returning the recorder.
+#[allow(dead_code)] // not every suite exercises the sealed fixture
 pub fn recorded_win() -> Recorder {
     let mut recorder = Recorder::new(genesis());
     let (one, two) = (key_one(), key_two());

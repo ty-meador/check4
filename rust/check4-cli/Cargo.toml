@@ -1,0 +1,17 @@
+[package]
+name = "check4-cli"
+version = "0.1.0"
+edition = "2021"
+description = "Check4 terminal client: host, join and play signed peer-to-peer games"
+license = "MIT"
+
+[[bin]]
+name = "check4"
+path = "src/main.rs"
+
+[dependencies]
+check4-core = { path = "../check4-core" }
+check4-net = { path = "../check4-net" }
+check4-protocol = { path = "../check4-protocol" }
+rand = "0.10"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
