@@ -323,6 +323,65 @@ fn established_result(game: &Game) -> Option<GameResult> {
     game.winner().map(GameResult::Winner)
 }
 
+/// Validate `record` as the next link (`expected` is its position) on a
+/// chain whose head is `head`, then apply its action to `game`. Returns the
+/// new head. The single source of per-record chain semantics, shared by
+/// [`verify`] and [`Recorder::ingest`].
+fn validate_and_apply(
+    genesis: &Genesis,
+    game_id: &Hash,
+    head: &Hash,
+    game: &mut Game,
+    expected: u32,
+    record: &MoveRecord,
+) -> Result<Hash, ChainError> {
+    if record.ply != expected {
+        return Err(ChainError::PlyMismatch {
+            expected,
+            found: record.ply,
+        });
+    }
+    if record.prev_hash != *head {
+        return Err(ChainError::BrokenChain { ply: expected });
+    }
+
+    let signer = genesis.key(game.turn());
+    let signing_bytes = MoveRecord::signing_bytes(
+        game_id,
+        &record.prev_hash,
+        record.ply,
+        record.action,
+        &record.state_hash,
+    );
+    if signer
+        .verify_strict(&signing_bytes, &record.signature)
+        .is_err()
+    {
+        return Err(ChainError::BadSignature { ply: expected });
+    }
+
+    apply_action(game, record.action).map_err(|source| ChainError::IllegalAction {
+        ply: expected,
+        source,
+    })?;
+
+    if record.state_hash != state_hash(game) {
+        return Err(ChainError::StateHashMismatch { ply: expected });
+    }
+
+    Ok(record.hash(game_id))
+}
+
+/// A seal's result must match what the replayed game establishes: the
+/// winner when decided, or an adjudicated draw only on an undecided game.
+fn check_seal_result(game: &Game, result: GameResult) -> Result<(), ChainError> {
+    match (established_result(game), result) {
+        (Some(established), sealed) if established == sealed => Ok(()),
+        (None, GameResult::AdjudicatedDraw) => Ok(()),
+        _ => Err(ChainError::SealResultMismatch),
+    }
+}
+
 /// A fully verified log: the replayed final position and the settled
 /// result, if any.
 #[derive(Debug, Clone)]
@@ -345,51 +404,12 @@ pub fn verify(log: &GameLog) -> Result<VerifiedGame, ChainError> {
     let mut head = game_id;
 
     for (i, record) in log.records.iter().enumerate() {
-        let expected = i as u32;
-        if record.ply != expected {
-            return Err(ChainError::PlyMismatch {
-                expected,
-                found: record.ply,
-            });
-        }
-        if record.prev_hash != head {
-            return Err(ChainError::BrokenChain { ply: expected });
-        }
-
-        let signer = log.genesis.key(game.turn());
-        let signing_bytes = MoveRecord::signing_bytes(
-            &game_id,
-            &record.prev_hash,
-            record.ply,
-            record.action,
-            &record.state_hash,
-        );
-        if signer
-            .verify_strict(&signing_bytes, &record.signature)
-            .is_err()
-        {
-            return Err(ChainError::BadSignature { ply: expected });
-        }
-
-        apply_action(&mut game, record.action).map_err(|source| ChainError::IllegalAction {
-            ply: expected,
-            source,
-        })?;
-
-        if record.state_hash != state_hash(&game) {
-            return Err(ChainError::StateHashMismatch { ply: expected });
-        }
-
-        head = record.hash(&game_id);
+        head = validate_and_apply(&log.genesis, &game_id, &head, &mut game, i as u32, record)?;
     }
 
     let mut outcome = established_result(&game);
     if let Some(seal) = &log.seal {
-        match (established_result(&game), seal.result) {
-            (Some(established), sealed) if established == sealed => {}
-            (None, GameResult::AdjudicatedDraw) => {}
-            _ => return Err(ChainError::SealResultMismatch),
-        }
+        check_seal_result(&game, seal.result)?;
 
         let signing_bytes = Seal::signing_bytes(&game_id, &head, seal.result);
         for (seat, (key, sig)) in log.genesis.keys.iter().zip(&seal.signatures).enumerate() {
@@ -497,6 +517,51 @@ impl Recorder {
         Ok(self.log.records.last().expect("record just pushed"))
     }
 
+    /// Append a foreign record — one produced and signed elsewhere (live
+    /// play: the opponent's move arriving over the network). Runs the full
+    /// per-record verification ([`verify`]'s checks: ply order, chain link,
+    /// signature of the player to move, legality, state commitment) before
+    /// accepting; on any error the recorder is unchanged. Two recorders fed
+    /// the same game through [`Recorder::record`] on one side and
+    /// [`Recorder::ingest`] on the other stay byte-identical.
+    pub fn ingest(&mut self, record: MoveRecord) -> Result<&MoveRecord, ChainError> {
+        if self.log.seal.is_some() {
+            return Err(ChainError::AlreadySealed);
+        }
+
+        let expected = self.log.records.len() as u32;
+        let mut game = self.game.clone();
+        let head = validate_and_apply(
+            &self.log.genesis,
+            &self.game_id,
+            &self.head,
+            &mut game,
+            expected,
+            &record,
+        )?;
+
+        self.head = head;
+        self.game = game;
+        self.log.records.push(record);
+        Ok(self.log.records.last().expect("record just pushed"))
+    }
+
+    /// This seat's seal signature over the current head, for exchange with
+    /// the opponent (each side signs locally, then both attach via
+    /// [`Recorder::seal_with_signatures`]). Refuses to sign a result the
+    /// replayed game contradicts, or with a key that holds no seat.
+    pub fn seal_signature(
+        &self,
+        result: GameResult,
+        key: &SigningKey,
+    ) -> Result<Signature, ChainError> {
+        check_seal_result(&self.game, result)?;
+        if !self.log.genesis.keys.contains(&key.verifying_key()) {
+            return Err(ChainError::WrongKey);
+        }
+        Ok(key.sign(&Seal::signing_bytes(&self.game_id, &self.head, result)))
+    }
+
     /// Attach a seal from two independently produced signatures (each seat
     /// signs [`Seal::signing_bytes`] over the current head). Validates the
     /// result against the replayed game and both signatures before
@@ -509,11 +574,7 @@ impl Recorder {
         if self.log.seal.is_some() {
             return Err(ChainError::AlreadySealed);
         }
-        match (established_result(&self.game), result) {
-            (Some(established), sealed) if established == sealed => {}
-            (None, GameResult::AdjudicatedDraw) => {}
-            _ => return Err(ChainError::SealResultMismatch),
-        }
+        check_seal_result(&self.game, result)?;
 
         let signing_bytes = Seal::signing_bytes(&self.game_id, &self.head, result);
         for (seat, (key, sig)) in self.log.genesis.keys.iter().zip(&signatures).enumerate() {
